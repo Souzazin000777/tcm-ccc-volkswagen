@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Análise Operacional · CCC GRU</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=block">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.8.0/countUp.umd.min.js"></script>
+<style>
+:root{
+  --azul:#092B54; --azul2:#0d3a6f; --azul3:#1456a8;
+  --vermelho:#C8102E; --vermelho2:#e63252;
+  --branco:#ffffff; --cinza:#F4F5F7; --cinza2:#e6e9ef;
+  --texto:#1a2b42; --texto2:#5b6b82; --borda:#e3e7ee;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;color:var(--texto);background:var(--azul);}
+.deck{height:100vh;height:100dvh;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth;}
+.deck::-webkit-scrollbar{width:0;}
+.slide{height:100vh;height:100dvh;width:100%;scroll-snap-align:start;scroll-snap-stop:always;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:clamp(24px,5vh,64px) clamp(24px,6vw,90px) clamp(24px,5vh,60px);background:var(--cinza);}
+.slide.dark{background:linear-gradient(135deg,#071f3d 0%,#092B54 55%,#0c3767 100%);color:#fff;}
+
+/* reveal animations */
+.rv{opacity:0;transform:translateY(38px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);}
+.slide.active .rv{opacity:1;transform:none;}
+.rv.z{transform:scale(.9);}
+.slide.active .rv.z{transform:scale(1);}
+.d1{transition-delay:.1s}.d2{transition-delay:.22s}.d3{transition-delay:.34s}.d4{transition-delay:.46s}.d5{transition-delay:.58s}.d6{transition-delay:.7s}.d7{transition-delay:.82s}.d8{transition-delay:.94s}
+
+/* header */
+.kicker{display:inline-flex;align-items:center;gap:9px;font-size:.72rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--vermelho);margin-bottom:14px;}
+.kicker::before{content:"";width:26px;height:2px;background:var(--vermelho);display:inline-block;}
+.dark .kicker{color:#ff6b82;}
+.dark .kicker::before{background:#ff6b82;}
+h1.title{font-size:clamp(1.6rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.02em;line-height:1.05;color:var(--azul);}
+.dark h1.title{color:#fff;}
+.sub{font-size:1rem;color:var(--texto2);margin-top:10px;font-weight:400;max-width:760px;line-height:1.55;}
+.dark .sub{color:#b9c7dc;}
+.slide-head{margin-bottom:2.6vh;flex-shrink:0;}
+.brandtag{position:absolute;bottom:clamp(16px,2.4vh,24px);left:clamp(20px,6vw,90px);display:flex;align-items:center;gap:10px;font-size:.68rem;font-weight:700;letter-spacing:.15em;color:var(--texto2);text-transform:uppercase;}
+.brandtag img{height:clamp(24px,3vh,30px);width:auto;display:block;border-radius:6px;}
+.dark .brandtag{color:#7d93b3;}
+
+.body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;}
+
+/* ---------- CAPA ---------- */
+.cover{justify-content:center;align-items:flex-start;}
+.ms{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;-webkit-font-feature-settings:'liga';font-feature-settings:'liga';-webkit-font-smoothing:antialiased;vertical-align:middle;}
+.logo-tcm{display:flex;align-items:center;gap:14px;margin-bottom:40px;}
+.logo-tcm img{height:clamp(44px,6vh,64px);width:auto;max-width:70vw;display:block;}
+.cover h1{font-size:clamp(2.4rem,6.5vw,4.6rem);font-weight:900;line-height:.98;letter-spacing:-.03em;color:#fff;}
+.cover h1 em{font-style:normal;color:#ff6b82;display:block;}
+.cover .csub{margin-top:28px;font-size:1.25rem;color:#c6d4e8;font-weight:400;}
+.cover .csub b{color:#fff;font-weight:600;}
+.cover .period{margin-top:34px;display:inline-flex;align-items:center;gap:12px;padding:14px 26px;border:1px solid rgba(255,255,255,.22);border-radius:100px;font-size:.95rem;font-weight:600;color:#fff;background:rgba(255,255,255,.05);backdrop-filter:blur(6px);}
+.cover .period i{color:#ff6b82;}
+.cover-chips{margin-top:22px;display:flex;gap:12px;flex-wrap:wrap;}
+.cover-chips span{padding:9px 18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;font-size:.9rem;font-weight:500;color:#dbe6f5;}
+
+/* ---------- CARDS ---------- */
+.grid{display:grid;gap:20px;}
+.card{background:#fff;border:1px solid var(--borda);border-radius:18px;padding:26px 26px;position:relative;box-shadow:0 2px 14px rgba(9,43,84,.04);transition:transform .5s,box-shadow .5s;}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(9,43,84,.10);}
+.card .ci{width:46px;height:46px;border-radius:12px;background:var(--cinza);display:flex;align-items:center;justify-content:center;margin-bottom:18px;}
+.card .ci i{font-size:1.25rem;color:var(--azul);}
+.card.accent .ci{background:rgba(200,16,46,.09);}
+.card.accent .ci i{color:var(--vermelho);}
+.card .cval{font-size:clamp(1.7rem,2.6vw,2.5rem);font-weight:800;letter-spacing:-.02em;color:var(--azul);line-height:1;}
+.card .cunit{font-size:1rem;font-weight:600;color:var(--texto2);margin-left:4px;}
+.card .clab{font-size:.82rem;font-weight:600;color:var(--texto2);text-transform:uppercase;letter-spacing:.08em;margin-top:10px;}
+.card .cnote{font-size:.8rem;color:var(--texto2);margin-top:6px;font-weight:400;}
+.card .ctrend{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;font-weight:700;margin-top:8px;padding:3px 9px;border-radius:6px;}
+.up{color:#0a7d3f;background:rgba(10,125,63,.1);}
+.down{color:var(--vermelho);background:rgba(200,16,46,.09);}
+
+/* intro list */
+.intro-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:44px;align-items:center;}
+.intro-txt p{font-size:1.02rem;line-height:1.75;color:var(--texto2);margin-bottom:18px;}
+.intro-txt p b{color:var(--azul);font-weight:700;}
+.intro-stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.mini{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:20px;box-shadow:0 2px 12px rgba(9,43,84,.04);}
+.mini .mv{font-size:clamp(1.4rem,2.2vw,1.9rem);font-weight:800;color:var(--azul);line-height:1;}
+.mini .ml{font-size:.75rem;font-weight:600;color:var(--texto2);text-transform:uppercase;letter-spacing:.07em;margin-top:8px;}
+.mini i{color:var(--vermelho);margin-right:7px;}
+
+/* charts */
+.chart-box{background:#fff;border:1px solid var(--borda);border-radius:18px;padding:clamp(16px,2vh,24px) clamp(16px,2vw,26px);box-shadow:0 2px 14px rgba(9,43,84,.04);position:relative;display:flex;flex-direction:column;min-height:0;}
+.chart-box h3{font-size:.95rem;font-weight:700;color:var(--azul);margin-bottom:4px;}
+.chart-box .csub2{font-size:.78rem;color:var(--texto2);margin-bottom:16px;}
+/* merged highlight card (slide 03) */
+.highlight-card{display:flex;flex-direction:column;justify-content:center;gap:0;}
+.highlight-card .hc-row{display:flex;align-items:center;gap:20px;padding:8px 4px;}
+.highlight-card .hc-ico{width:60px;height:60px;flex-shrink:0;border-radius:16px;background:var(--cinza);display:flex;align-items:center;justify-content:center;}
+.highlight-card .hc-ico i{font-size:1.7rem;color:var(--azul);}
+.highlight-card .hc-ico.accent{background:rgba(200,16,46,.09);}
+.highlight-card .hc-ico.accent i{color:var(--vermelho);}
+.highlight-card .hc-lab{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--texto2);margin-bottom:6px;}
+.highlight-card .hc-name{font-size:clamp(1.05rem,1.7vw,1.35rem);font-weight:800;color:var(--azul);line-height:1.15;letter-spacing:-.01em;}
+.highlight-card .hc-note{font-size:.9rem;color:var(--texto2);margin-top:6px;font-weight:500;}
+.highlight-card .hc-div{height:1px;background:var(--borda);margin:18px 4px;}
+.chart-canvas-wrap{position:relative;width:100%;flex:1 1 auto;min-height:180px;}
+.chart-canvas-wrap canvas{width:100%!important;}
+
+/* table */
+.tbl{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 14px rgba(9,43,84,.05);border:1px solid var(--borda);font-size:clamp(.72rem,1.2vw,.9rem);}
+.tbl thead th{background:var(--azul);color:#fff;font-size:.72em;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:clamp(9px,1.4vh,15px) clamp(8px,1.2vw,18px);text-align:left;}
+.tbl thead th.r{text-align:right;}
+.tbl tbody td{padding:clamp(8px,1.2vh,13px) clamp(8px,1.2vw,18px);font-size:1em;border-bottom:1px solid var(--borda);color:var(--texto);font-weight:500;}
+.tbl tbody td.r{text-align:right;font-variant-numeric:tabular-nums;}
+.tbl tbody tr:last-child td{border-bottom:none;}
+.tbl tbody tr:hover{background:var(--cinza);}
+.rankn{display:inline-flex;width:26px;height:26px;border-radius:8px;background:var(--cinza2);color:var(--azul);font-weight:800;font-size:.8rem;align-items:center;justify-content:center;}
+.rankn.g1{background:var(--vermelho);color:#fff;}
+.rankn.g2{background:var(--azul);color:#fff;}
+.rankn.g3{background:var(--azul3);color:#fff;}
+.badge{display:inline-block;padding:3px 9px;border-radius:6px;font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums;}
+.badge.pos{color:#0a7d3f;background:rgba(10,125,63,.1);}
+.badge.neg{color:var(--vermelho);background:rgba(200,16,46,.09);}
+.badge.neu{color:var(--texto2);background:var(--cinza2);}
+
+/* toggle buttons / tabs */
+.toggle{display:inline-flex;gap:4px;background:var(--cinza2);padding:4px;border-radius:12px;flex-wrap:wrap;}
+.toggle button{border:none;background:transparent;padding:8px clamp(12px,1.6vw,18px);font-size:clamp(.74rem,1.1vw,.82rem);font-weight:600;color:var(--texto2);border-radius:9px;cursor:pointer;font-family:inherit;transition:all .25s;white-space:nowrap;}
+.toggle button:hover{color:var(--azul);}
+.toggle button.on{background:#fff;color:var(--azul);box-shadow:0 2px 8px rgba(9,43,84,.12);}
+.toggle button.on.accent-tab{background:var(--vermelho);color:#fff;}
+
+/* insights */
+.ins-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.ins{background:#fff;border:1px solid var(--borda);border-left:4px solid var(--vermelho);border-radius:14px;padding:22px 22px;box-shadow:0 2px 12px rgba(9,43,84,.04);transition:transform .4s;}
+.ins:hover{transform:translateY(-3px);}
+.ins .ih{display:flex;align-items:center;gap:11px;margin-bottom:11px;}
+.ins .ih i{width:38px;height:38px;border-radius:10px;background:rgba(9,43,84,.06);color:var(--azul);display:flex;align-items:center;justify-content:center;font-size:1rem;}
+.ins .ih .it{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--texto2);}
+.ins .ib{font-size:.98rem;line-height:1.55;color:var(--texto);font-weight:500;}
+.ins .ib b{color:var(--azul);font-weight:800;}
+.ins .ib .hl{color:var(--vermelho);font-weight:800;}
+
+/* thanks */
+.thanks{justify-content:center;align-items:center;text-align:center;}
+.thanks h1{font-size:clamp(2.8rem,8vw,5rem);font-weight:900;color:#fff;letter-spacing:-.03em;}
+.thanks .tline{width:70px;height:3px;background:var(--vermelho);margin:30px auto;}
+.thanks p{color:#c6d4e8;font-size:1.15rem;font-weight:400;line-height:2;}
+.thanks p b{color:#fff;font-weight:700;}
+
+/* nav dots / scroll indicator */
+.dots{position:fixed;right:clamp(16px,2vw,30px);top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:9px;align-items:flex-end;}
+.dots button{position:relative;width:11px;height:11px;border-radius:100px;border:1.5px solid rgba(9,43,84,.28);background:transparent;cursor:pointer;padding:0;transition:all .35s cubic-bezier(.2,.7,.2,1);display:flex;align-items:center;justify-content:center;}
+.dots button:hover{border-color:var(--vermelho);transform:scale(1.2);}
+.dots button.on{width:11px;height:30px;border-color:transparent;background:var(--vermelho);}
+/* page-number tooltip on the active dot */
+.dots button .dn{position:absolute;right:20px;top:50%;transform:translateY(-50%) translateX(6px);opacity:0;pointer-events:none;font-size:.66rem;font-weight:800;letter-spacing:.06em;color:var(--azul);background:#fff;border:1px solid var(--borda);padding:3px 8px;border-radius:6px;white-space:nowrap;transition:opacity .3s,transform .3s;}
+.dots button:hover .dn{opacity:1;transform:translateY(-50%) translateX(0);}
+/* dark-theme rail: brighten for contrast over navy */
+.dots.on-dark button{border-color:rgba(255,255,255,.4);}
+.dots.on-dark button:hover{border-color:#ff6b82;}
+.dots.on-dark button.on{background:#ff6b82;border-color:transparent;}
+.dots.on-dark button .dn{color:#fff;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);}
+/* current-page counter pill at the bottom of the rail */
+.navcount{position:fixed;right:clamp(16px,2vw,30px);bottom:clamp(20px,4vh,40px);z-index:50;font-size:.72rem;font-weight:800;letter-spacing:.08em;color:var(--texto2);background:#fff;border:1px solid var(--borda);padding:6px 11px;border-radius:100px;transition:all .3s;}
+.navcount b{color:var(--vermelho);font-size:.85rem;}
+.navcount.on-dark{color:#b9c7dc;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);}
+.navcount.on-dark b{color:#ff6b82;}
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--vermelho);z-index:60;transition:width .3s;}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.four-col{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+.six-col{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;}
+.hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:.72rem;color:var(--texto2);display:flex;align-items:center;gap:8px;animation:bob 2s infinite;}
+.dark .hint{color:#7d93b3;}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+@media(max-width:1100px){
+  .four-col{grid-template-columns:repeat(2,1fr);}
+  .six-col{grid-template-columns:repeat(3,1fr);}
+}
+@media(max-width:820px){
+  .four-col,.six-col,.three-col,.ins-grid{grid-template-columns:repeat(2,1fr);}
+  .intro-wrap,.two-col{grid-template-columns:1fr;}
+}
+@media(max-width:560px){
+  .four-col,.six-col,.three-col,.ins-grid,.intro-stats{grid-template-columns:1fr 1fr;}
+  .card{padding:18px 18px;}
+  .card .ci{width:38px;height:38px;margin-bottom:12px;}
+  .tbl thead th,.tbl tbody td{padding:9px 10px;font-size:.72rem;}
+  .dots{right:10px;gap:7px;}
+  .dots button{width:9px;height:9px;}
+  .dots button.on{height:24px;width:9px;}
+  .dots button .dn{display:none;}
+  .navcount{right:10px;padding:5px 9px;font-size:.66rem;}
+  .hint{display:none;}
+}
+/* PORTRAIT / vertical screens (TV em pé, tablets em retrato) */
+@media(orientation:portrait){
+  .slide{padding:clamp(28px,4vh,70px) clamp(22px,5vw,70px);}
+  .two-col,.intro-wrap{grid-template-columns:1fr;gap:clamp(14px,2vh,22px);}
+  .four-col{grid-template-columns:repeat(2,1fr);}
+  .three-col{grid-template-columns:repeat(3,1fr);}
+  .ins-grid{grid-template-columns:1fr 1fr;}
+  /* charts get generous height when stacked vertically */
+  .chart-canvas-wrap{height:auto!important;min-height:24vh;flex:1 1 auto;}
+  .body{gap:clamp(12px,2vh,22px);}
+  .body>.two-col{flex:1 1 auto;min-height:0;}
+  .body>.two-col>.chart-box{min-height:26vh;}
+  .highlight-card{min-height:24vh;}
+}
+@media(orientation:portrait) and (max-width:700px){
+  .four-col,.ins-grid,.intro-stats{grid-template-columns:1fr 1fr;}
+  .three-col{grid-template-columns:1fr;}
+  .cover h1{font-size:clamp(2rem,9vw,3.4rem);}
+}
+/* very tall & narrow (e.g. 1080x1920 TV em pé) */
+@media(orientation:portrait) and (min-height:1200px){
+  .slide-head{margin-bottom:4vh;}
+  .card .cval{font-size:clamp(2rem,4vw,3rem);}
+  .mini .mv{font-size:clamp(1.6rem,3vw,2.4rem);}
+  .chart-canvas-wrap{min-height:32vh;}
+  .kicker{font-size:.9rem;}
+}
+/* short landscape (small laptops) */
+@media(orientation:landscape) and (max-height:620px){
+  .slide-head{margin-bottom:1.4vh;}
+  .card{padding:14px 16px;}
+  .card .ci{width:34px;height:34px;margin-bottom:8px;}
+  .card .cnote,.card .clab{font-size:.68rem;}
+}
+/* presentation mode buttons */
+.present-btn{display:inline-flex;align-items:center;gap:10px;margin-top:32px;padding:14px 28px;border:none;border-radius:100px;background:var(--vermelho);color:#fff;font-family:inherit;font-size:clamp(.9rem,1.4vw,1rem);font-weight:700;letter-spacing:.01em;cursor:pointer;transition:background .25s,transform .25s;}
+.present-btn:hover{background:var(--vermelho2);transform:translateY(-2px);}
+.present-btn i{font-size:1.25rem;}
+.exit-btn{display:inline-flex;align-items:center;gap:9px;margin-top:30px;padding:12px 24px;border:1px solid rgba(255,255,255,.28);border-radius:100px;background:rgba(255,255,255,.06);color:#fff;font-family:inherit;font-size:clamp(.85rem,1.3vw,.95rem);font-weight:600;cursor:pointer;transition:all .25s;}
+.exit-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.5);}
+.exit-btn i{font-size:1.15rem;color:#ff6b82;}
+/* hide exit button when not in fullscreen */
+.exit-wrap{display:none;}
+body.is-fs .exit-wrap{display:block;}
+/* safety: on extreme aspect ratios allow the slide body to scroll rather than clip */
+@media(max-height:520px),(max-width:400px){
+  .slide{overflow-y:auto;overflow-x:hidden;}
+  .chart-canvas-wrap{min-height:200px;}
+}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="dots on-dark" id="dots"></div>
+<div class="navcount on-dark" id="navcount"><b>01</b> / 12</div>
+<div class="deck" id="deck">
+
+<!-- 1 CAPA -->
+<section class="slide dark cover active">
+  <div class="body" style="justify-content:center">
+    <div class="logo-tcm rv d1"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM Logística"></div>
+    <div class="kicker rv d2">Dashboard Executivo</div>
+    <h1 class="rv d2">ANÁLISE<br>OPERACIONAL<em>CCC GRU</em></h1>
+    <div class="csub rv d3"><b>Peso</b> · <b>Volumes</b> · <b>Visitas</b> por fornecedor</div>
+    <div class="cover-chips rv d4">
+      <span><i class="ms" style="color:#ff6b82;margin-right:7px">scale</i>Análise de Peso</span>
+      <span><i class="ms" style="color:#ff6b82;margin-right:7px">inventory_2</i>Volumes</span>
+      <span><i class="ms" style="color:#ff6b82;margin-right:7px">fact_check</i>Visitas</span>
+    </div>
+    <div class="period rv d5"><i class="ms">calendar_month</i> Abril a Julho de 2026</div>
+    <div class="rv d6"><button class="present-btn" id="presentBtn"><i class="ms">slideshow</i> Apresentar</button></div>
+  </div>
+  <div class="hint"><i class="ms">mouse</i> Role ou use as setas do teclado</div>
+  <div class="brandtag" style="letter-spacing:.15em">CCC GRU · ABRIL–JULHO 2026</div>
+</section>
+
+<!-- 2 INTRODUCAO -->
+<section class="slide">
+  <div class="slide-head rv d1"><div class="kicker">Introdução</div><h1 class="title">Contexto da Análise</h1></div>
+  <div class="body">
+    <div class="intro-wrap">
+      <div class="intro-txt rv d2">
+        <p><b>Objetivo.</b> Avaliar o desempenho operacional do Centro de Consolidação de Cargas (CCC GRU), medindo a movimentação de peso, volumes e visitas por fornecedor ao longo do período.</p>
+        <p><b>Período analisado.</b> Abril a Julho de 2026 — quatro meses consecutivos de operação, agrupados a partir da Data de Chegada de cada registro.</p>
+        <p><b>Base de dados.</b> Todos os indicadores desta apresentação foram calculados diretamente da planilha operacional, sem estimativas ou projeções.</p>
+      </div>
+      <div class="intro-stats rv d3">
+        <div class="mini"><div class="mv" data-cu="REGISTROS">0</div><div class="ml"><i class="ms">database</i>Registros</div></div>
+        <div class="mini"><div class="mv" data-cu="FORNECEDORES">0</div><div class="ml"><i class="ms">factory</i>Fornecedores</div></div>
+        <div class="mini"><div class="mv"><span data-cu="PESO_MIL">0</span><span style="font-size:1rem"> t</span></div><div class="ml"><i class="ms">scale</i>Peso Total</div></div>
+        <div class="mini"><div class="mv" data-cu="VOLUME">0</div><div class="ml"><i class="ms">inventory_2</i>Volumes</div></div>
+        <div class="mini"><div class="mv" data-cu="VISITAS">0</div><div class="ml"><i class="ms">fact_check</i>Visitas</div></div>
+        <div class="mini"><div class="mv" data-cu="CLIENTES">0</div><div class="ml"><i class="ms">handshake</i>Clientes</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 3 VISAO GERAL -->
+<section class="slide">
+  <div class="slide-head rv d1"><div class="kicker">Visão Geral</div><h1 class="title">Indicadores-Chave do Período</h1></div>
+  <div class="body">
+    <div class="four-col" style="margin-bottom:20px">
+      <div class="card accent rv d2"><div class="ci"><i class="ms">scale</i></div><div class="cval"><span data-cu="PESO_MIL">0</span><span class="cunit">t</span></div><div class="clab">Peso Total</div><div class="cnote">2.644.088 kg movimentados</div></div>
+      <div class="card rv d3"><div class="ci"><i class="ms">inventory_2</i></div><div class="cval" data-cu="VOLUME">0</div><div class="clab">Volume Total</div><div class="cnote">Unidades movimentadas</div></div>
+      <div class="card rv d4"><div class="ci"><i class="ms">fact_check</i></div><div class="cval" data-cu="VISITAS">0</div><div class="clab">Visitas Totais</div><div class="cnote">Registros de chegada</div></div>
+      <div class="card rv d5"><div class="ci"><i class="ms">factory</i></div><div class="cval" data-cu="FORNECEDORES">0</div><div class="clab">Fornecedores</div><div class="cnote">Ativos no período</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-box rv d6"><h3>Distribuição de Peso · Top Fornecedores</h3><div class="csub2">Participação sobre o peso total do período</div><div class="chart-canvas-wrap" style="height:26vh"><canvas id="cDonut"></canvas></div></div>
+      <div class="chart-box rv d7 highlight-card">
+        <div class="hc-row">
+          <div class="hc-ico accent"><i class="ms">workspace_premium</i></div>
+          <div class="hc-txt">
+            <div class="hc-lab">Maior Fornecedor</div>
+            <div class="hc-name" id="ov_maior">—</div>
+            <div class="hc-note" id="ov_maior_pct"></div>
+          </div>
+        </div>
+        <div class="hc-div"></div>
+        <div class="hc-row">
+          <div class="hc-ico"><i class="ms">trending_up</i></div>
+          <div class="hc-txt">
+            <div class="hc-lab">Mês de Pico</div>
+            <div class="hc-name" id="ov_mes">—</div>
+            <div class="hc-note" id="ov_mes_note"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 4 EVOLUCAO MENSAL -->
+<section class="slide">
+  <div class="slide-head rv d1"><div class="kicker">Evolução Mensal</div><h1 class="title">Desempenho ao Longo dos Meses</h1></div>
+  <div class="body">
+    <div class="four-col rv d2" style="margin-bottom:20px" id="evoCards"></div>
+    <div class="chart-box rv d3"><h3>Comparativo Abril · Maio · Junho · Julho</h3><div class="csub2">Peso (toneladas), Volumes e Visitas por mês</div><div class="chart-canvas-wrap" style="height:42vh"><canvas id="cEvo"></canvas></div></div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 5 PESO POR FORNECEDOR -->
+<section class="slide">
+  <div class="slide-head rv d1" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+    <div><div class="kicker">Peso por Fornecedor</div><h1 class="title">Ranking de Movimentação (kg)</h1></div>
+    <div class="toggle rv d2" id="pesoToggle"></div>
+  </div>
+  <div class="body">
+    <div class="chart-box rv d3"><h3 id="pesoTitle">Todos os meses · Top 12</h3><div class="csub2">Ordenado do maior para o menor · valores em kg</div><div class="chart-canvas-wrap" style="height:52vh"><canvas id="cPeso"></canvas></div></div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 6 PARTICIPACAO -->
+<section class="slide">
+  <div class="slide-head rv d1"><div class="kicker">Participação Percentual</div><h1 class="title">Share de Peso por Fornecedor (%)</h1></div>
+  <div class="body">
+    <table class="tbl rv d2" id="partTbl"></table>
+    <div class="sub rv d3" style="margin-top:16px;font-size:.85rem"><i class="ms" style="color:var(--vermelho);margin-right:6px">info</i>Variação calculada entre Abril e Julho. Destaques automáticos para maior crescimento e maior redução no share.</div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 7 VISITAS -->
+<section class="slide">
+  <div class="slide-head rv d1" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+    <div><div class="kicker">Visitas</div><h1 class="title">Frequência de Atendimento</h1></div>
+    <div class="toggle rv d2" id="visToggle"></div>
+  </div>
+  <div class="body">
+    <div class="three-col rv d2" style="margin-bottom:20px">
+      <div class="card accent"><div class="ci"><i class="ms">fact_check</i></div><div class="cval" id="v_total">0</div><div class="clab">Visitas no Período</div></div>
+      <div class="card"><div class="ci"><i class="ms">bar_chart</i></div><div class="cval" id="v_media">0</div><div class="clab">Média por Fornecedor</div></div>
+      <div class="card"><div class="ci"><i class="ms">military_tech</i></div><div class="cval" style="font-size:1.1rem;line-height:1.25" id="v_top">—</div><div class="clab">Mais Visitas</div><div class="cnote" id="v_top_n"></div></div>
+    </div>
+    <div class="chart-box rv d3"><h3 id="visTitle">Top 10 Fornecedores por Número de Visitas</h3><div class="csub2" id="visSub">Cada registro com Data de Chegada válida = 1 visita</div><div class="chart-canvas-wrap" style="height:38vh"><canvas id="cVis"></canvas></div></div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 8 VOLUMES -->
+<section class="slide">
+  <div class="slide-head rv d1" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+    <div><div class="kicker">Volumes</div><h1 class="title">Movimentação de Volumes por Fornecedor</h1></div>
+    <div class="toggle rv d2" id="volToggle"></div>
+  </div>
+  <div class="body">
+    <div class="two-col" style="align-items:stretch">
+      <div class="chart-box rv d2"><h3 id="volStackTitle">Top 6 · Volumes por Mês</h3><div class="csub2" id="volStackSub">Comparativo dos quatro meses</div><div class="chart-canvas-wrap" style="height:44vh"><canvas id="cVolStack"></canvas></div></div>
+      <div class="chart-box rv d3"><h3 id="volBarTitle">Ranking Total de Volumes</h3><div class="csub2" id="volBarSub">Soma do período · Top 10</div><div class="chart-canvas-wrap" style="height:44vh"><canvas id="cVolBar"></canvas></div></div>
+    </div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 9 RANKING EXECUTIVO -->
+<section class="slide">
+  <div class="slide-head rv d1" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+    <div><div class="kicker">Ranking Executivo</div><h1 class="title">Top 10 Fornecedores</h1></div>
+    <div class="toggle rv d2" id="rankToggle"></div>
+  </div>
+  <div class="body">
+    <table class="tbl rv d2" id="rankTbl"></table>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 10 INSIGHTS -->
+<section class="slide">
+  <div class="slide-head rv d1"><div class="kicker">Insights</div><h1 class="title">Conclusões da Análise</h1></div>
+  <div class="body">
+    <div class="ins-grid" id="insGrid"></div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 11 GRAFICO DE PONTOS DO PERIODO -->
+<section class="slide">
+  <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Gráfico de Pontos do Período</h1></div>
+  <div class="body">
+    <div class="chart-box rv d2">
+      <h3>Abril · Maio · Junho · Julho</h3>
+      <div class="csub2">Cada ponto representa um mês · posição pelo peso movimentado · tamanho pela quantidade de visitas</div>
+      <div class="chart-canvas-wrap" style="height:56vh"><canvas id="cPeriodoPontos"></canvas></div>
+    </div>
+  </div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 12 AGRADECIMENTO -->
+<section class="slide dark thanks">
+  <div class="body" style="justify-content:center">
+    <div class="logo-tcm rv d1" style="justify-content:center;margin-bottom:30px"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM Logística"></div>
+    <h1 class="rv d2 z">Obrigado.</h1>
+    <div class="tline rv d3"></div>
+    <p class="rv d4"><b>TCM Logística</b> · Análise Operacional<br>CCC GRU · Abril a Julho de 2026</p>
+    <div class="exit-wrap rv d5"><button class="exit-btn" id="exitBtn"><i class="ms">close_fullscreen</i> Encerrar apresentação</button></div>
+  </div>
+  <div class="brandtag" style="letter-spacing:.15em">CCC GRU · ABRIL–JULHO 2026</div>
+</section>
+
+</div>
+
+<script>
+const DATA = {"meses": ["Abril", "Maio", "Junho", "Julho"], "mensal": {"peso": [484907.0, 661709.2, 757491.4, 739980.0], "volume": [2509, 3308, 3612, 3721], "visitas": [464, 624, 671, 690]}, "totais": {"peso": 2644087.5, "volume": 13150, "visitas": 2449, "fornecedores": 205, "registros": 2449, "clientes": 1}, "suppliers": [{"nome": "METALAC SPS INDUSTRIA E COMERCIO", "full": "METALAC SPS INDUSTRIA E COMERCIO LTDA.", "peso": 239026.9, "volume": 464, "visitas": 47, "peso_m": [39998.3, 58612.9, 81624.0, 58791.7], "vol_m": [88, 109, 139, 128], "vis_m": [10, 12, 12, 13]}, {"nome": "ULIANA IND. MET.", "full": "ULIANA IND. MET. LTDA (000856)", "peso": 158424.8, "volume": 265, "visitas": 29, "peso_m": [28112.3, 47741.1, 44692.9, 37878.5], "vol_m": [51, 78, 75, 61], "vis_m": [5, 8, 8, 8]}, {"nome": "JARDIM SISTEMAS AUTOMOTIVOS E INDU", "full": "JARDIM SISTEMAS AUTOMOTIVOS E INDUSTRIAIS LTDA (000614)", "peso": 156252.6, "volume": 668, "visitas": 34, "peso_m": [23664.4, 37372.9, 50978.6, 44236.7], "vol_m": [95, 164, 229, 180], "vis_m": [4, 7, 11, 12]}, {"nome": "INDUSTRIA AUTO METALURGICA", "full": "INDUSTRIA AUTO METALURGICA S A", "peso": 139957.3, "volume": 791, "visitas": 47, "peso_m": [19067.9, 42362.0, 39060.5, 39467.0], "vol_m": [125, 243, 210, 213], "vis_m": [8, 14, 12, 13]}, {"nome": "FICOSA DO BRASIL", "full": "FICOSA DO BRASIL LTDA", "peso": 100647.2, "volume": 547, "visitas": 29, "peso_m": [20952.0, 25695.2, 24537.4, 29462.6], "vol_m": [112, 138, 139, 158], "vis_m": [5, 7, 7, 10]}, {"nome": "IOCHPE MAXION", "full": "IOCHPE MAXION S.A.", "peso": 91505.3, "volume": 99, "visitas": 52, "peso_m": [14766.6, 26618.2, 26631.7, 23488.8], "vol_m": [14, 22, 33, 30], "vis_m": [8, 8, 18, 18]}, {"nome": "INDUSTRIA E COMERCIO URSO BRANCO", "full": "INDUSTRIA E COMERCIO URSO BRANCO LTDA", "peso": 86052.1, "volume": 168, "visitas": 17, "peso_m": [15407.0, 29308.3, 20915.3, 20421.5], "vol_m": [32, 48, 43, 45], "vis_m": [3, 5, 5, 4]}, {"nome": "ITALCABOS", "full": "ITALCABOS LTDA", "peso": 79146.3, "volume": 205, "visitas": 17, "peso_m": [12800.1, 14448.5, 28524.3, 23373.4], "vol_m": [33, 40, 76, 56], "vis_m": [3, 3, 6, 5]}, {"nome": "BUZAS INDUSTRIA E COMERCIO", "full": "BUZAS INDUSTRIA E COMERCIO LTDA", "peso": 74320.8, "volume": 266, "visitas": 50, "peso_m": [17667.0, 18933.0, 21047.7, 16673.1], "vol_m": [62, 89, 62, 53], "vis_m": [11, 17, 11, 11]}, {"nome": "METALURGICA SUPRENS", "full": "METALURGICA SUPRENS LTDA", "peso": 68519.2, "volume": 259, "visitas": 47, "peso_m": [16622.9, 15352.1, 18743.2, 17801.1], "vol_m": [58, 62, 71, 68], "vis_m": [9, 12, 12, 14]}, {"nome": "DYNA INDUSTRIA E COMERCIO", "full": "DYNA INDUSTRIA E COMERCIO LTDA.", "peso": 62543.6, "volume": 204, "visitas": 39, "peso_m": [9786.4, 12849.6, 17702.9, 22204.7], "vol_m": [45, 37, 53, 69], "vis_m": [6, 11, 9, 13]}, {"nome": "AUTOMETAL SBC INJECAO E PINTURA DE", "full": "AUTOMETAL SBC INJECAO E PINTURA DE PLASTICOS LTDA", "peso": 61918.0, "volume": 103, "visitas": 30, "peso_m": [11418.5, 17342.5, 14740.9, 18416.0], "vol_m": [23, 25, 31, 24], "vis_m": [7, 7, 8, 8]}, {"nome": "CONTINENTAL PARAFUSOS", "full": "CONTINENTAL PARAFUSOS S.A.", "peso": 58002.5, "volume": 66, "visitas": 15, "peso_m": [4224.3, 14858.1, 20305.9, 18614.2], "vol_m": [5, 17, 25, 19], "vis_m": [2, 4, 5, 4]}, {"nome": "ACUMENT BRASIL SISTEMAS DE FIXACAO", "full": "ACUMENT BRASIL SISTEMAS DE FIXACAO LTDA", "peso": 52371.3, "volume": 117, "visitas": 32, "peso_m": [13439.1, 9085.4, 11747.6, 18099.2], "vol_m": [30, 23, 25, 39], "vis_m": [8, 8, 8, 8]}, {"nome": "POLISTAMPO IND MET", "full": "POLISTAMPO IND MET LTDA", "peso": 50179.4, "volume": 463, "visitas": 51, "peso_m": [6853.9, 13514.8, 11685.4, 18125.3], "vol_m": [70, 142, 113, 138], "vis_m": [8, 11, 18, 14]}, {"nome": "METALTORK INDUSTRIA E COMERCIO DE", "full": "METALTORK INDUSTRIA E COMERCIO DE AUTO PECAS LTDA.", "peso": 47053.4, "volume": 138, "visitas": 18, "peso_m": [17249.9, 12783.6, 11316.2, 5703.8], "vol_m": [46, 41, 32, 19], "vis_m": [6, 5, 4, 3]}, {"nome": "METALURGICA MAUSER IND. E COM.", "full": "METALURGICA MAUSER IND. E COM. LTDA", "peso": 39795.8, "volume": 547, "visitas": 43, "peso_m": [8081.4, 8748.3, 10071.3, 12894.9], "vol_m": [109, 110, 133, 195], "vis_m": [8, 9, 12, 14]}, {"nome": "SRK S RIKO AUTOMOTIVE HOSE DO BRAS", "full": "SRK S RIKO AUTOMOTIVE HOSE DO BRASIL LTDA", "peso": 39256.0, "volume": 142, "visitas": 24, "peso_m": [7978.5, 22947.9, 6622.2, 1707.4], "vol_m": [34, 49, 29, 30], "vis_m": [5, 6, 6, 7]}, {"nome": "LOPSA INDUSTRIA E COMERCIO DE TORN", "full": "LOPSA INDUSTRIA E COMERCIO DE TORNEADOS LTDA.", "peso": 38578.5, "volume": 68, "visitas": 30, "peso_m": [8594.0, 8982.4, 10675.0, 10327.1], "vol_m": [12, 16, 18, 22], "vis_m": [5, 7, 8, 10]}, {"nome": "VMG IND METALURGICA", "full": "VMG IND METALURGICA LTDA", "peso": 38443.1, "volume": 142, "visitas": 18, "peso_m": [11033.3, 5147.5, 11661.4, 10600.9], "vol_m": [40, 20, 39, 43], "vis_m": [5, 4, 4, 5]}, {"nome": "CEBI BRASIL", "full": "CEBI BRASIL LTDA", "peso": 36190.4, "volume": 209, "visitas": 18, "peso_m": [4552.0, 7462.0, 14661.2, 9515.2], "vol_m": [28, 42, 84, 55], "vis_m": [2, 4, 7, 5]}, {"nome": "DRIV BRASIL SOLUCOES AUTOMOTIVAS", "full": "DRIV BRASIL SOLUCOES AUTOMOTIVAS LTDA", "peso": 34691.2, "volume": 121, "visitas": 27, "peso_m": [6922.0, 6914.5, 10517.9, 10336.8], "vol_m": [27, 23, 36, 35], "vis_m": [7, 6, 8, 6]}, {"nome": "BOGE RUBBER PLASTICS BRASIL", "full": "BOGE RUBBER PLASTICS BRASIL S.A.", "peso": 32740.6, "volume": 417, "visitas": 31, "peso_m": [8125.8, 7544.8, 8677.3, 8392.8], "vol_m": [101, 98, 113, 105], "vis_m": [8, 7, 9, 7]}, {"nome": "IRAMEC AUTOPECAS", "full": "IRAMEC AUTOPECAS S/A.", "peso": 32159.4, "volume": 146, "visitas": 16, "peso_m": [5044.5, 6198.5, 8384.0, 12532.3], "vol_m": [22, 26, 41, 57], "vis_m": [3, 4, 4, 5]}, {"nome": "IRBAS", "full": "IRBAS LTDA", "peso": 32025.1, "volume": 141, "visitas": 30, "peso_m": [3901.6, 9253.8, 10102.5, 8767.3], "vol_m": [18, 39, 41, 43], "vis_m": [3, 10, 8, 9]}, {"nome": "LEPE IND COM LT", "full": "LEPE IND COM LT", "peso": 31779.9, "volume": 113, "visitas": 25, "peso_m": [3899.8, 7926.6, 11066.9, 8886.5], "vol_m": [15, 29, 38, 31], "vis_m": [4, 7, 8, 6]}, {"nome": "HPPT INDUSTRIA E COMERCIO DE TUBOS", "full": "HPPT INDUSTRIA E COMERCIO DE TUBOS E PECAS PLASTICAS LTDA", "peso": 24664.8, "volume": 197, "visitas": 14, "peso_m": [5208.0, 5434.8, 4141.6, 9880.4], "vol_m": [40, 41, 36, 80], "vis_m": [2, 3, 3, 6]}, {"nome": "RESIL COMERCIAL INDUSTRIAL", "full": "RESIL COMERCIAL INDUSTRIAL LTDA", "peso": 24021.2, "volume": 117, "visitas": 42, "peso_m": [4195.1, 6285.2, 6568.3, 6972.6], "vol_m": [21, 31, 32, 33], "vis_m": [8, 12, 11, 11]}, {"nome": "IRMAOS PARASMO IND .MEC.", "full": "IRMAOS PARASMO S/A IND .MEC.", "peso": 23265.0, "volume": 98, "visitas": 20, "peso_m": [8072.1, 2308.7, 3482.0, 9402.3], "vol_m": [32, 17, 18, 31], "vis_m": [5, 5, 4, 6]}, {"nome": "STAMPTEC IND. COM. PCAS ESTAMPADAS", "full": "STAMPTEC IND. COM. PCAS ESTAMPADAS LTDA", "peso": 22787.8, "volume": 43, "visitas": 14, "peso_m": [3054.0, 5289.8, 8121.4, 6322.7], "vol_m": [6, 10, 13, 14], "vis_m": [1, 4, 5, 4]}, {"nome": "FERRAMENTARIA AMERICA L", "full": "FERRAMENTARIA AMERICA L LTDA", "peso": 22114.6, "volume": 79, "visitas": 12, "peso_m": [8116.7, 3622.1, 4562.2, 5813.6], "vol_m": [25, 15, 15, 24], "vis_m": [4, 2, 2, 4]}, {"nome": "ALLISON BRASIL IND. COM. S TR", "full": "ALLISON BRASIL IND. COM. S TR LTDA", "peso": 21955.1, "volume": 44, "visitas": 7, "peso_m": [0.0, 8268.8, 22.3, 13664.0], "vol_m": [0, 19, 5, 20], "vis_m": [0, 2, 2, 3]}, {"nome": "ALKA3 INDUSTRIA DE AUTOPECAS", "full": "ALKA3 INDUSTRIA DE AUTOPECAS LTDA", "peso": 19869.7, "volume": 129, "visitas": 30, "peso_m": [3047.7, 4669.3, 5949.3, 6203.4], "vol_m": [19, 28, 43, 39], "vis_m": [5, 8, 9, 8]}, {"nome": "ZAKLAD METALURGICZNY DO BRASIL", "full": "ZAKLAD METALURGICZNY DO BRASIL LTDA", "peso": 18865.5, "volume": 84, "visitas": 10, "peso_m": [5068.2, 3754.9, 5029.4, 5012.9], "vol_m": [22, 17, 23, 22], "vis_m": [3, 2, 2, 3]}, {"nome": "ABC ACO CORTE", "full": "ABC ACO CORTE LTDA", "peso": 18786.0, "volume": 26, "visitas": 11, "peso_m": [3557.0, 4753.0, 9328.0, 1148.0], "vol_m": [5, 9, 11, 1], "vis_m": [2, 3, 5, 1]}, {"nome": "PROGERAL IND.ARTEFATOS PLASTICOS", "full": "PROGERAL IND.ARTEFATOS PLASTICOS LTDA", "peso": 18261.4, "volume": 115, "visitas": 13, "peso_m": [3148.7, 5663.1, 3908.7, 5540.9], "vol_m": [21, 36, 25, 33], "vis_m": [2, 4, 3, 4]}, {"nome": "MAC INDUSTRIA MECANICA", "full": "MAC INDUSTRIA MECANICA LTDA.", "peso": 17984.8, "volume": 152, "visitas": 21, "peso_m": [5091.1, 5624.9, 4812.3, 2456.5], "vol_m": [37, 56, 42, 17], "vis_m": [5, 9, 6, 1]}, {"nome": "CINPAL COMPANHIA INDUSTRIAL DE PEC", "full": "CINPAL COMPANHIA INDUSTRIAL DE PECAS PARA AUTOMOVEIS", "peso": 17806.9, "volume": 38, "visitas": 18, "peso_m": [4169.0, 2966.9, 5036.0, 5635.0], "vol_m": [8, 6, 12, 12], "vis_m": [4, 3, 6, 5]}, {"nome": "CONFORMETAL ESTAMPARIA METAIS", "full": "CONFORMETAL ESTAMPARIA METAIS LTDA", "peso": 17646.6, "volume": 118, "visitas": 25, "peso_m": [3514.6, 3075.5, 4487.7, 6568.8], "vol_m": [20, 21, 29, 48], "vis_m": [5, 4, 6, 10]}, {"nome": "DANA INDUSTRIAS", "full": "DANA INDUSTRIAS LTDA", "peso": 17453.4, "volume": 113, "visitas": 15, "peso_m": [2356.0, 3808.0, 5512.0, 5777.4], "vol_m": [17, 27, 34, 35], "vis_m": [3, 4, 5, 3]}, {"nome": "PARKER HANNIFIN IND. E COM.", "full": "PARKER HANNIFIN IND. E COM. LTDA LTDA", "peso": 17296.0, "volume": 80, "visitas": 15, "peso_m": [3946.0, 3001.6, 4886.3, 5462.1], "vol_m": [14, 11, 26, 29], "vis_m": [3, 3, 4, 5]}, {"nome": "HUF DO BRASIL", "full": "HUF DO BRASIL LTDA", "peso": 17201.0, "volume": 163, "visitas": 18, "peso_m": [5418.4, 4187.4, 2927.3, 4668.1], "vol_m": [54, 35, 29, 45], "vis_m": [5, 4, 4, 5]}, {"nome": "FLEXFAB SOUTH AMERICAN", "full": "FLEXFAB SOUTH AMERICAN LTDA", "peso": 16325.0, "volume": 71, "visitas": 14, "peso_m": [3997.0, 4635.1, 2943.7, 4749.1], "vol_m": [15, 19, 14, 23], "vis_m": [3, 4, 3, 4]}, {"nome": "MELIDA COMERCIO INDUSTRIA", "full": "MELIDA COMERCIO INDUSTRIA LTDA", "peso": 15329.0, "volume": 191, "visitas": 19, "peso_m": [3075.4, 3570.7, 3854.1, 4828.8], "vol_m": [40, 41, 48, 62], "vis_m": [5, 4, 4, 6]}, {"nome": "S RIKO AUTOMOTIVE HOSE TECALON BRA", "full": "S RIKO AUTOMOTIVE HOSE TECALON BRASIL SA.", "peso": 15173.7, "volume": 246, "visitas": 29, "peso_m": [3413.0, 4785.5, 4131.0, 2844.2], "vol_m": [45, 75, 73, 53], "vis_m": [5, 8, 7, 9]}, {"nome": "IPA INDUSTRIA DE PRODUTOS AUTOMOTI", "full": "IPA INDUSTRIA DE PRODUTOS AUTOMOTIVOS RGS LTDA", "peso": 13803.9, "volume": 561, "visitas": 29, "peso_m": [2011.5, 2869.2, 3799.4, 5123.8], "vol_m": [92, 126, 124, 219], "vis_m": [5, 8, 7, 9]}, {"nome": "PLASTICOMP INDUSTRIA COMERCIO DE C", "full": "PLASTICOMP INDUSTRIA COMERCIO DE COMPONENTES PLASTICOS LTD", "peso": 13689.9, "volume": 32, "visitas": 8, "peso_m": [3218.6, 3467.0, 4013.8, 2990.4], "vol_m": [8, 7, 9, 8], "vis_m": [2, 2, 2, 2]}, {"nome": "V.S. DE LIMA & CIA.", "full": "V.S. DE LIMA & CIA. LTDA.", "peso": 13401.0, "volume": 118, "visitas": 17, "peso_m": [2795.6, 1990.5, 5315.0, 3299.9], "vol_m": [25, 24, 40, 29], "vis_m": [5, 4, 5, 3]}, {"nome": "SEG AUTOMOTIVE COMPONENTES BRAZIL", "full": "SEG AUTOMOTIVE COMPONENTES BRAZIL LTDA", "peso": 13138.4, "volume": 22, "visitas": 7, "peso_m": [0.0, 0.0, 5374.8, 7763.6], "vol_m": [0, 0, 9, 13], "vis_m": [0, 0, 3, 4]}, {"nome": "CHRIS-CINTOS DE SEGURANCA", "full": "CHRIS-CINTOS DE SEGURANCA LTDA.", "peso": 13016.4, "volume": 53, "visitas": 16, "peso_m": [2231.6, 3361.9, 3846.1, 3576.8], "vol_m": [9, 14, 15, 15], "vis_m": [3, 4, 4, 5]}, {"nome": "MAGNA CLOSURES DO BRASIL PROD.SERV", "full": "MAGNA CLOSURES DO BRASIL PROD.SERV.AUTOM.", "peso": 12923.5, "volume": 68, "visitas": 12, "peso_m": [1077.8, 3549.7, 3328.5, 4967.5], "vol_m": [5, 19, 16, 28], "vis_m": [1, 4, 3, 4]}, {"nome": "REFAL INDUSTRIA E COMERCIO DE REBI", "full": "REFAL INDUSTRIA E COMERCIO DE REBITES E REBITADEIRAS LTDA", "peso": 12815.9, "volume": 25, "visitas": 14, "peso_m": [4130.3, 2178.2, 207.4, 6300.0], "vol_m": [2, 14, 4, 5], "vis_m": [2, 4, 4, 4]}, {"nome": "HOWMET RODAS DE ALUMINIO", "full": "HOWMET RODAS DE ALUMINIO LTDA.", "peso": 10447.0, "volume": 24, "visitas": 8, "peso_m": [701.0, 1400.0, 5535.0, 2811.0], "vol_m": [4, 2, 10, 8], "vis_m": [2, 1, 3, 2]}, {"nome": "HBA HUTCHINSON BRASIL AUTOMOTIVE", "full": "HBA HUTCHINSON BRASIL AUTOMOTIVE LTDA", "peso": 10370.4, "volume": 64, "visitas": 17, "peso_m": [2314.4, 2310.9, 2193.5, 3551.5], "vol_m": [18, 11, 15, 20], "vis_m": [5, 4, 4, 4]}, {"nome": "ARPE INDUSTRIA ELETRONICA", "full": "ARPE INDUSTRIA ELETRONICA LTDA", "peso": 10246.1, "volume": 73, "visitas": 30, "peso_m": [2249.5, 2963.4, 2231.4, 2801.8], "vol_m": [15, 16, 20, 22], "vis_m": [6, 8, 8, 8]}, {"nome": "SODECIA AUTOMOTIVE SAO PAULO", "full": "SODECIA AUTOMOTIVE SAO PAULO LTDA.", "peso": 9518.0, "volume": 59, "visitas": 14, "peso_m": [2096.0, 4678.0, 2744.0, 0.0], "vol_m": [13, 27, 19, 0], "vis_m": [3, 7, 4, 0]}, {"nome": "PST ELETRONICA", "full": "PST ELETRONICA LTDA", "peso": 9426.7, "volume": 163, "visitas": 46, "peso_m": [729.1, 2904.7, 2939.3, 2853.6], "vol_m": [15, 47, 55, 46], "vis_m": [7, 14, 13, 12]}, {"nome": "TE CONNECTIVITY BR IND ELET", "full": "TE CONNECTIVITY BR IND ELET LTDA", "peso": 9382.6, "volume": 69, "visitas": 39, "peso_m": [4452.0, 1552.2, 1802.1, 1576.2], "vol_m": [17, 16, 19, 17], "vis_m": [9, 11, 12, 7]}, {"nome": "Axalta Coating Systems Brasil", "full": "Axalta Coating Systems Brasil Ltda", "peso": 9165.6, "volume": 17, "visitas": 9, "peso_m": [256.9, 684.9, 484.6, 7739.2], "vol_m": [1, 2, 2, 12], "vis_m": [1, 2, 2, 4]}, {"nome": "FIAMM LATIN AMERICA COMP. AUTOM.", "full": "FIAMM LATIN AMERICA COMP. AUTOM. LTDA.", "peso": 8991.5, "volume": 38, "visitas": 15, "peso_m": [2571.2, 1746.3, 2354.1, 2320.0], "vol_m": [10, 9, 10, 9], "vis_m": [4, 4, 3, 4]}, {"nome": "INDUSTRIA METALURGICA FANANDRI", "full": "INDUSTRIA METALURGICA FANANDRI LTDA", "peso": 8800.2, "volume": 20, "visitas": 20, "peso_m": [1578.1, 2052.8, 2062.0, 3107.3], "vol_m": [2, 4, 4, 10], "vis_m": [2, 4, 4, 10]}, {"nome": "CIAP - COM.E IND.DE AUTO PECAS", "full": "CIAP - COM.E IND.DE AUTO PECAS LTDA", "peso": 8796.8, "volume": 15, "visitas": 15, "peso_m": [1543.0, 3147.5, 2964.3, 1142.0], "vol_m": [3, 5, 5, 2], "vis_m": [3, 5, 5, 2]}, {"nome": "SPECIALTY ELECTRONIC MATERIALS COM", "full": "SPECIALTY ELECTRONIC MATERIALS COM. DE PRODUTOS QUIMICOS DO", "peso": 8395.8, "volume": 12, "visitas": 5, "peso_m": [0.0, 58.4, 4799.1, 3538.3], "vol_m": [0, 1, 6, 5], "vis_m": [0, 1, 2, 2]}, {"nome": "AUTOMETAL", "full": "AUTOMETAL LTDA", "peso": 8210.8, "volume": 53, "visitas": 15, "peso_m": [2295.9, 1605.3, 2042.6, 2267.0], "vol_m": [16, 10, 13, 14], "vis_m": [4, 3, 4, 4]}, {"nome": "ALPINO INDUSTRIA METALURGICA", "full": "ALPINO INDUSTRIA METALURGICA LTDA", "peso": 7807.6, "volume": 57, "visitas": 18, "peso_m": [2055.8, 1565.2, 2290.4, 1896.1], "vol_m": [11, 13, 16, 17], "vis_m": [3, 4, 6, 5]}, {"nome": "MURIACO FERRO E ACO", "full": "MURIACO FERRO E ACO LTDA", "peso": 7700.0, "volume": 25, "visitas": 9, "peso_m": [2042.0, 1814.0, 2595.0, 1249.0], "vol_m": [4, 4, 14, 3], "vis_m": [1, 3, 4, 1]}, {"nome": "MUVIQ BRASIL FABRICACAO DE PECAS E", "full": "MUVIQ BRASIL FABRICACAO DE PECAS E ACESSORIOS LTDA", "peso": 6845.0, "volume": 19, "visitas": 16, "peso_m": [1421.0, 1423.0, 1811.0, 2190.0], "vol_m": [4, 4, 5, 6], "vis_m": [3, 4, 5, 4]}, {"nome": "RETENLINS INDUSTRIA E COMERCIO DE", "full": "RETENLINS INDUSTRIA E COMERCIO DE RETENTORES LTDA", "peso": 6716.0, "volume": 21, "visitas": 6, "peso_m": [31.7, 0.0, 6560.4, 123.9], "vol_m": [3, 0, 3, 15], "vis_m": [2, 0, 1, 3]}, {"nome": "KIDDE BRASIL", "full": "KIDDE BRASIL LTDA", "peso": 6460.3, "volume": 29, "visitas": 7, "peso_m": [786.0, 1260.0, 1246.3, 3168.0], "vol_m": [3, 5, 7, 14], "vis_m": [1, 1, 2, 3]}, {"nome": "MTA BRASIL INDUSTRIA E COMERCIO DE", "full": "MTA BRASIL INDUSTRIA E COMERCIO DE COMPONENTES AUTOMOTIVOS L", "peso": 6016.9, "volume": 87, "visitas": 16, "peso_m": [917.1, 980.4, 1955.7, 2163.7], "vol_m": [13, 13, 29, 32], "vis_m": [3, 3, 4, 6]}, {"nome": "GUANGAN MATRIZ", "full": "GUANGAN MATRIZ", "peso": 5395.4, "volume": 54, "visitas": 17, "peso_m": [849.1, 1400.1, 1133.6, 2012.5], "vol_m": [11, 13, 12, 18], "vis_m": [4, 4, 4, 5]}, {"nome": "TSA - TECNOLOGIA EM SISTEMAS AUTOM", "full": "TSA - TECNOLOGIA EM SISTEMAS AUTOMOTIVOS LTDA", "peso": 5348.3, "volume": 139, "visitas": 17, "peso_m": [744.7, 1342.3, 1591.0, 1670.3], "vol_m": [20, 39, 44, 36], "vis_m": [2, 4, 5, 6]}, {"nome": "UREPOL POLIMEROS", "full": "UREPOL POLIMEROS LTDA", "peso": 5275.8, "volume": 24, "visitas": 17, "peso_m": [858.5, 1195.3, 1807.3, 1414.8], "vol_m": [4, 5, 8, 7], "vis_m": [3, 4, 6, 4]}, {"nome": "A RAYMOND BRASIL", "full": "A RAYMOND BRASIL LTDA", "peso": 5071.7, "volume": 88, "visitas": 32, "peso_m": [886.9, 1238.4, 1464.5, 1481.8], "vol_m": [16, 18, 27, 27], "vis_m": [7, 8, 9, 8]}, {"nome": "LL PRODUCTS DO BRASIL SERVICOS E C", "full": "LL PRODUCTS DO BRASIL SERVICOS E COMERCIO DE COMPONENTES AUT", "peso": 5051.9, "volume": 20, "visitas": 4, "peso_m": [1279.1, 1261.0, 1490.2, 1021.6], "vol_m": [4, 6, 4, 6], "vis_m": [1, 1, 1, 1]}, {"nome": "BRIDGESTONE DO BRASIL INDUSTRIA E", "full": "BRIDGESTONE DO BRASIL INDUSTRIA E COMERCIO LTDA.", "peso": 5049.6, "volume": 24, "visitas": 11, "peso_m": [806.4, 192.0, 2438.4, 1612.8], "vol_m": [3, 1, 12, 8], "vis_m": [3, 1, 4, 3]}, {"nome": "DIOCLAN EQUIPAMENTOS INDUSTRIAIS", "full": "DIOCLAN EQUIPAMENTOS INDUSTRIAIS LTDA", "peso": 4944.8, "volume": 36, "visitas": 15, "peso_m": [993.4, 16.8, 2993.0, 941.6], "vol_m": [3, 7, 13, 13], "vis_m": [2, 3, 4, 6]}, {"nome": "CBA BORRACHAS E PLASTICOS COMERCIO", "full": "CBA BORRACHAS E PLASTICOS COMERCIO E IMPORTACAO LTDA", "peso": 4663.0, "volume": 24, "visitas": 13, "peso_m": [652.0, 1917.0, 1045.0, 1049.0], "vol_m": [6, 9, 3, 6], "vis_m": [3, 4, 3, 3]}, {"nome": "QUAKER CHEMICAL IND E COMERCIO", "full": "QUAKER CHEMICAL IND E COMERCIO LTDA", "peso": 4450.0, "volume": 8, "visitas": 3, "peso_m": [0.0, 1602.0, 1602.0, 1246.0], "vol_m": [0, 3, 3, 2], "vis_m": [0, 1, 1, 1]}, {"nome": "DELUMA INDUSTRIA E COMERCIO", "full": "DELUMA INDUSTRIA E COMERCIO LTDA", "peso": 4414.8, "volume": 38, "visitas": 16, "peso_m": [587.8, 957.7, 1315.1, 1554.2], "vol_m": [8, 7, 11, 12], "vis_m": [3, 4, 5, 4]}, {"nome": "TUP TECNOLOGIA EM USIN.DE PREC.LTD", "full": "TUP TECNOLOGIA EM USIN.DE PREC.LTDA", "peso": 4314.8, "volume": 15, "visitas": 15, "peso_m": [362.1, 1306.7, 1583.1, 1063.0], "vol_m": [2, 4, 5, 4], "vis_m": [2, 4, 5, 4]}, {"nome": "ENGRECON", "full": "ENGRECON SA", "peso": 4030.6, "volume": 35, "visitas": 11, "peso_m": [4.0, 1252.9, 1720.8, 1053.0], "vol_m": [2, 12, 14, 7], "vis_m": [1, 3, 4, 3]}, {"nome": "POLYMER PLASTIC INDUSTRIA E COMERC", "full": "POLYMER PLASTIC INDUSTRIA E COMERCIO LTDA", "peso": 3862.5, "volume": 8, "visitas": 6, "peso_m": [286.0, 1512.0, 2058.0, 6.5], "vol_m": [2, 2, 3, 1], "vis_m": [1, 2, 2, 1]}, {"nome": "TIRRENO IND. COM. PRODUTOS QUIMICO", "full": "TIRRENO IND. COM. PRODUTOS QUIMICOS LTDA", "peso": 3731.3, "volume": 8, "visitas": 3, "peso_m": [0.0, 0.0, 667.2, 3064.2], "vol_m": [0, 0, 1, 7], "vis_m": [0, 0, 1, 2]}, {"nome": "DUAL BORGSTENA I BR C.D.E T.A", "full": "DUAL BORGSTENA I BR C.D.E T.A LTDA", "peso": 3495.6, "volume": 25, "visitas": 10, "peso_m": [984.2, 1099.8, 1069.5, 342.1], "vol_m": [7, 8, 7, 3], "vis_m": [3, 3, 2, 2]}, {"nome": "PLASTICOS MAUA", "full": "PLASTICOS MAUA LTDA", "peso": 3423.4, "volume": 56, "visitas": 7, "peso_m": [794.5, 770.6, 776.2, 1082.1], "vol_m": [13, 14, 13, 16], "vis_m": [1, 2, 2, 2]}, {"nome": "KARIJO COMERCIAL E IMPORTADORA", "full": "KARIJO COMERCIAL E IMPORTADORA LTDA", "peso": 3250.0, "volume": 10, "visitas": 4, "peso_m": [12.0, 0.0, 3218.0, 20.0], "vol_m": [1, 0, 8, 1], "vis_m": [1, 0, 2, 1]}, {"nome": "CASCO DO BRASIL", "full": "CASCO DO BRASIL LTDA", "peso": 3169.4, "volume": 36, "visitas": 21, "peso_m": [431.4, 657.4, 561.0, 1519.5], "vol_m": [6, 7, 5, 18], "vis_m": [4, 4, 4, 9]}, {"nome": "POWER PACKER DO BRASIL", "full": "POWER PACKER DO BRASIL LTDA", "peso": 3111.7, "volume": 37, "visitas": 14, "peso_m": [632.5, 649.1, 829.9, 1000.2], "vol_m": [6, 8, 11, 12], "vis_m": [3, 3, 4, 4]}, {"nome": "AEROGLASS BRASILEIRA FIBRAS DE VID", "full": "AEROGLASS BRASILEIRA S/A FIBRAS DE VIDRO", "peso": 3004.0, "volume": 30, "visitas": 9, "peso_m": [674.0, 700.0, 630.0, 1000.0], "vol_m": [8, 7, 6, 9], "vis_m": [2, 2, 2, 3]}, {"nome": "KOSTAL ELETROMECANICA", "full": "KOSTAL ELETROMECANICA LTDA", "peso": 2809.2, "volume": 14, "visitas": 13, "peso_m": [497.8, 1002.5, 308.0, 1001.0], "vol_m": [2, 5, 2, 5], "vis_m": [2, 5, 2, 4]}, {"nome": "COBRA METAIS DECORATIVOS", "full": "COBRA METAIS DECORATIVOS LTDA", "peso": 2287.5, "volume": 31, "visitas": 21, "peso_m": [448.3, 485.2, 645.1, 708.9], "vol_m": [13, 7, 6, 5], "vis_m": [5, 5, 6, 5]}, {"nome": "JEDAL-REDENTOR INDUSTRIA E COMERCI", "full": "JEDAL-REDENTOR INDUSTRIA E COMERCIO LTDA", "peso": 2174.0, "volume": 6, "visitas": 2, "peso_m": [0.0, 1207.0, 967.0, 0.0], "vol_m": [0, 3, 3, 0], "vis_m": [0, 1, 1, 0]}, {"nome": "STABILUS", "full": "STABILUS LTDA", "peso": 2053.4, "volume": 7, "visitas": 7, "peso_m": [0.0, 101.0, 1054.0, 898.4], "vol_m": [0, 1, 3, 3], "vis_m": [0, 1, 3, 3]}, {"nome": "IKRO COMPONENTES AUTOMOTIVOS", "full": "IKRO COMPONENTES AUTOMOTIVOS LTDA.", "peso": 1891.5, "volume": 21, "visitas": 18, "peso_m": [194.3, 487.1, 636.4, 573.7], "vol_m": [2, 5, 10, 4], "vis_m": [2, 5, 7, 4]}, {"nome": "INDUSTRIA METALURGICA FRUM", "full": "INDUSTRIA METALURGICA FRUM LTDA", "peso": 1878.1, "volume": 7, "visitas": 4, "peso_m": [542.6, 1335.5, 0.0, 0.0], "vol_m": [3, 4, 0, 0], "vis_m": [1, 3, 0, 0]}, {"nome": "CUMMINS FILTROS", "full": "CUMMINS FILTROS LTDA.", "peso": 1848.3, "volume": 23, "visitas": 9, "peso_m": [76.2, 72.5, 684.8, 1014.8], "vol_m": [2, 2, 8, 11], "vis_m": [1, 1, 4, 3]}, {"nome": "JSP BRASIL IND. DE PLASTICOS", "full": "JSP BRASIL IND. DE PLASTICOS LTDA", "peso": 1795.9, "volume": 110, "visitas": 5, "peso_m": [359.4, 358.4, 718.8, 359.4], "vol_m": [22, 22, 44, 22], "vis_m": [1, 1, 2, 1]}, {"nome": "CGE SOCIEDADE FABRICA DE PECAS PLA", "full": "CGE SOCIEDADE FABRICA DE PECAS PLASTICAS LTDA", "peso": 1777.8, "volume": 58, "visitas": 15, "peso_m": [91.2, 8.0, 960.6, 718.0], "vol_m": [12, 14, 17, 15], "vis_m": [3, 4, 4, 4]}, {"nome": "Leograf Grafica e Editora", "full": "Leograf Grafica e Editora Ltda", "peso": 1721.4, "volume": 6, "visitas": 3, "peso_m": [0.0, 561.3, 411.6, 748.4], "vol_m": [0, 2, 2, 2], "vis_m": [0, 1, 1, 1]}, {"nome": "REVEST CAR IND.E COM. DE CONF", "full": "REVEST CAR IND.E COM. DE CONF LTDA.", "peso": 1720.0, "volume": 66, "visitas": 21, "peso_m": [496.0, 329.0, 443.5, 451.5], "vol_m": [16, 15, 16, 19], "vis_m": [4, 4, 7, 6]}, {"nome": "Fva Ind. de Valvulas Automotivas", "full": "Fva Ind. de Valvulas Automotivas Ltda", "peso": 1651.2, "volume": 21, "visitas": 14, "peso_m": [235.0, 407.2, 769.0, 240.0], "vol_m": [3, 6, 9, 3], "vis_m": [2, 4, 5, 3]}, {"nome": "RC ENGENHARIA IND E COM", "full": "RC ENGENHARIA IND E COM LTDA", "peso": 1645.0, "volume": 11, "visitas": 7, "peso_m": [0.0, 640.0, 690.0, 315.0], "vol_m": [0, 4, 5, 2], "vis_m": [0, 2, 3, 2]}, {"nome": "INDUSTRIA QUIMICA DEL MONTE", "full": "INDUSTRIA QUIMICA DEL MONTE LTDA", "peso": 1560.0, "volume": 3, "visitas": 1, "peso_m": [1560.0, 0.0, 0.0, 0.0], "vol_m": [3, 0, 0, 0], "vis_m": [1, 0, 0, 0]}, {"nome": "COMERCIO DE TECIDOS E RESIDUOS TEX", "full": "COMERCIO DE TECIDOS E RESIDUOS TEXTEIS OLINDA LTDA. - EPP", "peso": 1500.0, "volume": 6, "visitas": 5, "peso_m": [0.0, 1500.0, 0.0, 0.0], "vol_m": [0, 6, 0, 0], "vis_m": [0, 5, 0, 0]}, {"nome": "HENKEL", "full": "HENKEL LTDA", "peso": 1449.0, "volume": 13, "visitas": 8, "peso_m": [268.5, 554.2, 527.6, 98.6], "vol_m": [2, 3, 3, 5], "vis_m": [2, 2, 2, 2]}, {"nome": "ADESIVOS LUMAR IND E COMERCIO", "full": "ADESIVOS LUMAR IND E COMERCIO LTDA", "peso": 1406.0, "volume": 16, "visitas": 16, "peso_m": [465.0, 240.0, 210.0, 491.0], "vol_m": [5, 3, 3, 5], "vis_m": [5, 3, 3, 5]}, {"nome": "NORMA DO BRASIL SISTEMAS DE CONEXA", "full": "NORMA DO BRASIL SISTEMAS DE CONEXAO LTDA", "peso": 1366.9, "volume": 12, "visitas": 7, "peso_m": [216.0, 493.5, 63.0, 594.4], "vol_m": [2, 4, 1, 5], "vis_m": [2, 3, 1, 1]}, {"nome": "ADHEX TECHNOLOGIES DO BRASIL COMER", "full": "ADHEX TECHNOLOGIES DO BRASIL COMERCIO DE ADESIVOS LTDA", "peso": 1364.4, "volume": 52, "visitas": 4, "peso_m": [258.5, 961.2, 0.0, 144.7], "vol_m": [11, 36, 0, 5], "vis_m": [1, 2, 0, 1]}, {"nome": "Sika", "full": "Sika S.A.", "peso": 1330.0, "volume": 7, "visitas": 4, "peso_m": [350.0, 350.0, 350.0, 280.0], "vol_m": [1, 1, 1, 4], "vis_m": [1, 1, 1, 1]}, {"nome": "GALUTTI AUTOMOTIVE IND METALURGICA", "full": "GALUTTI AUTOMOTIVE IND METALURGICA LTDA", "peso": 1168.7, "volume": 11, "visitas": 10, "peso_m": [338.4, 278.3, 258.0, 294.0], "vol_m": [4, 3, 2, 2], "vis_m": [3, 3, 2, 2]}, {"nome": "TTB INDUSTRIA E COMERCIO DE PRODUT", "full": "TTB INDUSTRIA E COMERCIO DE PRODUTOS METALICOS LTDA", "peso": 1167.4, "volume": 111, "visitas": 26, "peso_m": [152.5, 268.6, 159.0, 587.2], "vol_m": [33, 32, 14, 32], "vis_m": [4, 8, 7, 7]}, {"nome": "ARGUS PRODUTOS E SISTEMAS CONTRA I", "full": "ARGUS PRODUTOS E SISTEMAS CONTRA INCENDIO LTDA", "peso": 1156.0, "volume": 4, "visitas": 3, "peso_m": [446.0, 191.0, 0.0, 519.0], "vol_m": [2, 1, 0, 1], "vis_m": [1, 1, 0, 1]}, {"nome": "METALACRE IND.COM. LACRES", "full": "METALACRE IND.COM. LACRES LTDA", "peso": 1128.0, "volume": 2, "visitas": 2, "peso_m": [0.0, 564.0, 0.0, 564.0], "vol_m": [0, 1, 0, 1], "vis_m": [0, 1, 0, 1]}, {"nome": "HALDEX DO BRASIL INDUSTRIA E COMER", "full": "HALDEX DO BRASIL INDUSTRIA E COMERCIO LTDA.", "peso": 1058.6, "volume": 13, "visitas": 13, "peso_m": [250.7, 219.0, 364.5, 224.3], "vol_m": [3, 3, 4, 3], "vis_m": [3, 3, 4, 3]}, {"nome": "CONTINENTAL ADVANCED ANTENNA AUTOM", "full": "CONTINENTAL ADVANCED ANTENNA AUTOMOTIVA LTDA.", "peso": 1034.9, "volume": 25, "visitas": 12, "peso_m": [271.1, 292.0, 107.1, 364.7], "vol_m": [4, 8, 3, 10], "vis_m": [3, 4, 2, 3]}, {"nome": "INDUSTRIA & METALURGICA BONI", "full": "INDUSTRIA & METALURGICA BONI LTDA", "peso": 1019.0, "volume": 8, "visitas": 5, "peso_m": [283.0, 0.0, 1.0, 735.0], "vol_m": [1, 0, 1, 6], "vis_m": [1, 0, 1, 3]}, {"nome": "ESPAS BRASIL DESENVOLVIMENTO AUTOM", "full": "ESPAS BRASIL DESENVOLVIMENTO AUTOMOTIVO LTDA", "peso": 1003.0, "volume": 19, "visitas": 16, "peso_m": [190.0, 147.0, 372.0, 294.0], "vol_m": [3, 5, 5, 6], "vis_m": [3, 4, 4, 5]}, {"nome": "AMALFIS UNIFORMES CONFECCAO DE ROU", "full": "AMALFIS UNIFORMES CONFECCAO DE ROUPAS LTDA", "peso": 1001.0, "volume": 3, "visitas": 1, "peso_m": [0.0, 1001.0, 0.0, 0.0], "vol_m": [0, 3, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "Mercantil São Vito", "full": "Mercantil São Vito", "peso": 1000.0, "volume": 5, "visitas": 2, "peso_m": [0.0, 500.0, 0.0, 500.0], "vol_m": [0, 3, 0, 2], "vis_m": [0, 1, 0, 1]}, {"nome": "COMERCIAL NOSSA SRA. DO LIBANO", "full": "COMERCIAL NOSSA SRA. DO LIBANO LTDA.", "peso": 900.0, "volume": 2, "visitas": 2, "peso_m": [0.0, 420.0, 0.0, 480.0], "vol_m": [0, 1, 0, 1], "vis_m": [0, 1, 0, 1]}, {"nome": "DTECH SOLUTIONS IND E COM DE ESTR", "full": "DTECH SOLUTIONS IND E COM DE ESTR MODULARES LTDA", "peso": 844.0, "volume": 10, "visitas": 2, "peso_m": [0.0, 434.0, 410.0, 0.0], "vol_m": [0, 9, 1, 0], "vis_m": [0, 1, 1, 0]}, {"nome": "INDEMETAL INDUSTRIA DE ETIQUETAS", "full": "INDEMETAL INDUSTRIA DE ETIQUETAS LTDA", "peso": 824.0, "volume": 11, "visitas": 5, "peso_m": [178.0, 135.0, 195.0, 316.0], "vol_m": [2, 2, 3, 4], "vis_m": [1, 1, 1, 2]}, {"nome": "DELUZ INDUSTRIA DE LUMINARIAS EIRE", "full": "DELUZ INDUSTRIA DE LUMINARIAS EIRELI", "peso": 765.9, "volume": 3, "visitas": 1, "peso_m": [0.0, 0.0, 765.9, 0.0], "vol_m": [0, 0, 3, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "FLEXITECH DO BR.IND.COM.MANG.FREIO", "full": "FLEXITECH DO BR.IND.COM.MANG.FREIOS LTDA", "peso": 756.0, "volume": 13, "visitas": 11, "peso_m": [139.3, 30.4, 207.1, 379.2], "vol_m": [4, 1, 4, 4], "vis_m": [3, 1, 3, 4]}, {"nome": "NORQUIMA PRODUTOS QUIMICOS", "full": "NORQUIMA PRODUTOS QUIMICOS LTDA", "peso": 692.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 692.0, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "AVARON INFORGRAF", "full": "AVARON INFORGRAF LTDA.", "peso": 660.9, "volume": 5, "visitas": 5, "peso_m": [0.0, 260.0, 0.0, 400.9], "vol_m": [0, 2, 0, 3], "vis_m": [0, 2, 0, 3]}, {"nome": "NSK BRASIL", "full": "NSK BRASIL LTDA", "peso": 644.3, "volume": 16, "visitas": 15, "peso_m": [129.5, 193.5, 191.1, 130.2], "vol_m": [3, 4, 5, 4], "vis_m": [3, 4, 4, 4]}, {"nome": "2S INDUSTRIA METALURGICA - EIRELI", "full": "2S INDUSTRIA METALURGICA - EIRELI", "peso": 639.0, "volume": 19, "visitas": 14, "peso_m": [100.0, 133.0, 217.0, 189.0], "vol_m": [4, 8, 4, 3], "vis_m": [3, 4, 4, 3]}, {"nome": "MOBIMAX IMPORTACAO E EXPORTACAO", "full": "MOBIMAX IMPORTACAO E EXPORTACAO LTDA", "peso": 630.5, "volume": 13, "visitas": 13, "peso_m": [0.0, 262.7, 127.8, 240.0], "vol_m": [0, 5, 4, 4], "vis_m": [0, 5, 4, 4]}, {"nome": "METALPO INDUSTRIA E COMERCIO", "full": "METALPO INDUSTRIA E COMERCIO LTDA", "peso": 623.7, "volume": 23, "visitas": 13, "peso_m": [94.7, 78.9, 252.6, 197.4], "vol_m": [6, 4, 7, 6], "vis_m": [2, 2, 5, 4]}, {"nome": "CREMER", "full": "CREMER SA", "peso": 616.3, "volume": 3, "visitas": 2, "peso_m": [0.0, 0.0, 231.1, 385.2], "vol_m": [0, 0, 1, 2], "vis_m": [0, 0, 1, 1]}, {"nome": "LOG E PRINT GRAFICA E LOGISTICA", "full": "LOG E PRINT GRAFICA E LOGISTICA SA", "peso": 543.0, "volume": 30, "visitas": 29, "peso_m": [124.0, 130.0, 115.0, 174.0], "vol_m": [7, 8, 6, 9], "vis_m": [7, 8, 6, 8]}, {"nome": "MAXIOIL DO BRASIL IND E COM DE PRO", "full": "MAXIOIL DO BRASIL IND E COM DE PRODUTOS QUIMICOS LTDA", "peso": 530.0, "volume": 2, "visitas": 2, "peso_m": [0.0, 320.0, 0.0, 210.0], "vol_m": [0, 1, 0, 1], "vis_m": [0, 1, 0, 1]}, {"nome": "HBA HUTCHINSON BRASIL AUT", "full": "HBA HUTCHINSON BRASIL AUT LTDA", "peso": 502.4, "volume": 8, "visitas": 5, "peso_m": [125.6, 125.6, 251.2, 0.0], "vol_m": [1, 1, 6, 0], "vis_m": [1, 1, 3, 0]}, {"nome": "Columbus Mckinnon do Brasil", "full": "Columbus Mckinnon do Brasil Ltda.", "peso": 455.0, "volume": 5, "visitas": 3, "peso_m": [450.0, 5.0, 0.0, 0.0], "vol_m": [3, 2, 0, 0], "vis_m": [1, 2, 0, 0]}, {"nome": "DEPOSITO CATARINENSE MATERIAIS DE", "full": "DEPOSITO CATARINENSE MATERIAIS DE MANUTENCAO INDUSTRIAL LTDA", "peso": 447.0, "volume": 10, "visitas": 7, "peso_m": [250.0, 60.0, 120.0, 17.0], "vol_m": [3, 1, 2, 4], "vis_m": [2, 1, 1, 3]}, {"nome": "JMO INDUSTRIA MECANICA", "full": "JMO INDUSTRIA MECANICA LTDA", "peso": 404.9, "volume": 6, "visitas": 5, "peso_m": [55.6, 184.9, 0.0, 164.3], "vol_m": [1, 2, 0, 3], "vis_m": [1, 2, 0, 2]}, {"nome": "ENERGY TECH SOLUCOES ELETRICAS EIR", "full": "ENERGY TECH SOLUCOES ELETRICAS EIRELI", "peso": 400.0, "volume": 6, "visitas": 1, "peso_m": [0.0, 400.0, 0.0, 0.0], "vol_m": [0, 6, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "SPAAL INDUSTRIA E COMERCIO", "full": "SPAAL INDUSTRIA E COMERCIO LTDA (001201)", "peso": 382.0, "volume": 18, "visitas": 13, "peso_m": [77.0, 123.0, 48.0, 134.0], "vol_m": [2, 3, 2, 11], "vis_m": [2, 3, 2, 6]}, {"nome": "Contitech do Brasil Produtos Autom", "full": "Contitech do Brasil Produtos Automotivos Ltda", "peso": 305.9, "volume": 16, "visitas": 7, "peso_m": [0.0, 224.9, 45.3, 35.7], "vol_m": [0, 9, 1, 6], "vis_m": [0, 3, 1, 3]}, {"nome": "LOGFER PRODUTOS INDUSTRIAIS", "full": "LOGFER PRODUTOS INDUSTRIAIS LTDA", "peso": 290.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 290.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "REAL MECANICA DE PRECISAO", "full": "REAL MECANICA DE PRECISAO LTDA.", "peso": 289.0, "volume": 193, "visitas": 20, "peso_m": [56.0, 102.0, 84.0, 47.0], "vol_m": [29, 89, 57, 18], "vis_m": [2, 9, 7, 2]}, {"nome": "HR SERVICE COMERCIAL", "full": "HR SERVICE COMERCIAL LTDA", "peso": 285.0, "volume": 5, "visitas": 4, "peso_m": [282.0, 0.0, 2.0, 1.0], "vol_m": [3, 0, 1, 1], "vis_m": [2, 0, 1, 1]}, {"nome": "NEO PARTS", "full": "NEO PARTS LTDA", "peso": 282.4, "volume": 6, "visitas": 6, "peso_m": [30.0, 30.0, 100.4, 122.1], "vol_m": [1, 1, 2, 2], "vis_m": [1, 1, 2, 2]}, {"nome": "THREE BOND DO BRASIL INDUSTRIA E C", "full": "THREE BOND DO BRASIL INDUSTRIA E COMERCIO LTDA", "peso": 276.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 276.0, 0.0, 0.0], "vol_m": [0, 1, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "TECTRADE COMERCIAL", "full": "TECTRADE COMERCIAL LTDA", "peso": 263.0, "volume": 13, "visitas": 8, "peso_m": [223.0, 29.0, 8.0, 3.0], "vol_m": [4, 5, 3, 1], "vis_m": [1, 3, 3, 1]}, {"nome": "INTERSYS DO BRASIL SISTEMAS DE COD", "full": "INTERSYS DO BRASIL SISTEMAS DE CODIFICACAO LTDA", "peso": 250.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 250.0, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "SCANIA LATIN AMERICA LTDA - SBC", "full": "SCANIA LATIN AMERICA LTDA - SBC", "peso": 247.0, "volume": 2, "visitas": 1, "peso_m": [0.0, 0.0, 247.0, 0.0], "vol_m": [0, 0, 2, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "Metalúrgica Cartec", "full": "Metalúrgica Cartec Ltda.", "peso": 235.9, "volume": 6, "visitas": 6, "peso_m": [117.7, 32.1, 24.3, 61.7], "vol_m": [3, 1, 1, 1], "vis_m": [3, 1, 1, 1]}, {"nome": "PHILTRAR IND.COM. FILTROS E EQUIP", "full": "PHILTRAR IND.COM. FILTROS E EQUIP EIRELI", "peso": 222.1, "volume": 5, "visitas": 1, "peso_m": [0.0, 222.1, 0.0, 0.0], "vol_m": [0, 5, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "CENTROBOR - CENTRO NAC. DE DISTRIB", "full": "CENTROBOR - CENTRO NAC. DE DISTRIB. DE BORRACHA", "peso": 200.0, "volume": 2, "visitas": 1, "peso_m": [0.0, 0.0, 200.0, 0.0], "vol_m": [0, 0, 2, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "FECVA COMERCIO DE MATERIAIS ELETRI", "full": "FECVA COMERCIO DE MATERIAIS ELETRICOS E FERRAGENS LTDA", "peso": 186.0, "volume": 11, "visitas": 8, "peso_m": [0.0, 12.0, 1.0, 173.0], "vol_m": [0, 2, 1, 8], "vis_m": [0, 1, 1, 6]}, {"nome": "BP FABRICACAO E COMERCIO DE MATERI", "full": "BP FABRICACAO E COMERCIO DE MATERIAIS ELETRICOS LTDA", "peso": 182.3, "volume": 2, "visitas": 2, "peso_m": [0.0, 0.0, 182.3, 0.0], "vol_m": [0, 0, 2, 0], "vis_m": [0, 0, 2, 0]}, {"nome": "GALINHO REFRIGERACAO COML IMPORTAD", "full": "GALINHO REFRIGERACAO COML IMPORTAD LTDA", "peso": 171.5, "volume": 5, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 171.5], "vol_m": [0, 0, 0, 5], "vis_m": [0, 0, 0, 1]}, {"nome": "ELRING KLINGER DO BRASIL", "full": "ELRING KLINGER DO BRASIL LTDA", "peso": 161.9, "volume": 219, "visitas": 19, "peso_m": [39.8, 38.8, 41.2, 42.2], "vol_m": [52, 52, 64, 51], "vis_m": [4, 4, 6, 5]}, {"nome": "JC MANUTEX SOLUCOES EM SERVICOS", "full": "JC MANUTEX SOLUCOES EM SERVICOS LTDA", "peso": 161.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 161.0, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "TECNOPLAST INDUSTRIA E COMERCIO", "full": "TECNOPLAST INDUSTRIA E COMERCIO S.A", "peso": 153.5, "volume": 171, "visitas": 12, "peso_m": [81.2, 6.0, 25.2, 41.1], "vol_m": [36, 41, 70, 24], "vis_m": [3, 3, 4, 2]}, {"nome": "ELDORADO IND. PLAST.", "full": "ELDORADO IND. PLAST. LTDA", "peso": 125.4, "volume": 2, "visitas": 1, "peso_m": [0.0, 125.4, 0.0, 0.0], "vol_m": [0, 2, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "METALURGICA ANDROMEDA", "full": "METALURGICA ANDROMEDA LTDA", "peso": 124.8, "volume": 2, "visitas": 2, "peso_m": [0.0, 124.8, 0.0, 0.0], "vol_m": [0, 2, 0, 0], "vis_m": [0, 2, 0, 0]}, {"nome": "BALASKA EQUIPE INDUSTRIA E COMERCI", "full": "BALASKA EQUIPE INDUSTRIA E COMERCIO LTDA", "peso": 123.0, "volume": 4, "visitas": 3, "peso_m": [0.0, 112.0, 11.0, 0.0], "vol_m": [0, 1, 3, 0], "vis_m": [0, 1, 2, 0]}, {"nome": "FESTO BRASIL", "full": "FESTO BRASIL LTDA", "peso": 120.3, "volume": 20, "visitas": 7, "peso_m": [26.4, 3.0, 83.4, 7.5], "vol_m": [9, 3, 6, 2], "vis_m": [2, 1, 2, 2]}, {"nome": "EDSCHA DO BRASIL", "full": "EDSCHA DO BRASIL LTDA", "peso": 117.9, "volume": 10, "visitas": 10, "peso_m": [50.2, 50.9, 1.9, 15.0], "vol_m": [3, 3, 1, 3], "vis_m": [3, 3, 1, 3]}, {"nome": "FAMAS GRAFICA E EDITORA", "full": "FAMAS GRAFICA E EDITORA LTDA", "peso": 115.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 115.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "FSTA Filtração Soluções Tecnica Am", "full": "FSTA Filtração Soluções Tecnica Ambientais Ltda", "peso": 107.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 107.0, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "KEY-SERV INDUSTRIA E COMERCIO", "full": "KEY-SERV INDUSTRIA E COMERCIO LTDA", "peso": 101.7, "volume": 10, "visitas": 6, "peso_m": [39.3, 0.0, 52.6, 9.8], "vol_m": [1, 0, 7, 2], "vis_m": [1, 0, 3, 2]}, {"nome": "TAECH COMERCIO VAREJISTA DE EMBALA", "full": "TAECH COMERCIO VAREJISTA DE EMBALAGEN, ELETRONICOS E FERRAME", "peso": 101.0, "volume": 7, "visitas": 5, "peso_m": [50.0, 2.0, 34.0, 15.0], "vol_m": [1, 1, 1, 4], "vis_m": [1, 1, 1, 2]}, {"nome": "SMC AUTOMACAO DO BRASIL", "full": "SMC AUTOMACAO DO BRASIL LTDA", "peso": 97.4, "volume": 7, "visitas": 6, "peso_m": [0.0, 13.0, 83.3, 1.2], "vol_m": [0, 2, 3, 2], "vis_m": [0, 1, 3, 2]}, {"nome": "KONECRANES DEMAG BRASIL", "full": "KONECRANES DEMAG BRASIL LTDA", "peso": 92.7, "volume": 3, "visitas": 1, "peso_m": [92.7, 0.0, 0.0, 0.0], "vol_m": [3, 0, 0, 0], "vis_m": [1, 0, 0, 0]}, {"nome": "PIATEX INDUSTRIA E COMERCIO DE FIB", "full": "PIATEX INDUSTRIA E COMERCIO DE FIBERGLASS LTDA", "peso": 80.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 80.0, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "EDUARDO SABATINI QUINTAS", "full": "EDUARDO SABATINI QUINTAS", "peso": 72.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 72.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "ELEMAG EQUIPAMENTOS ELETRICOS E SE", "full": "ELEMAG EQUIPAMENTOS ELETRICOS E SERVICOS LTDA", "peso": 61.0, "volume": 8, "visitas": 2, "peso_m": [0.0, 0.0, 61.0, 0.0], "vol_m": [0, 0, 8, 0], "vis_m": [0, 0, 2, 0]}, {"nome": "Multiquetas Coml. de Artigos Para", "full": "Multiquetas Coml. de Artigos Para Inform. e Escritório Ltda.", "peso": 60.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 60.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "CCL INDUSTRIES DO BRASIL", "full": "CCL INDUSTRIES DO BRASIL SA", "peso": 59.4, "volume": 2, "visitas": 2, "peso_m": [22.7, 0.0, 36.7, 0.0], "vol_m": [1, 0, 1, 0], "vis_m": [1, 0, 1, 0]}, {"nome": "WESTAFLEX TUBOS FLEXIVEIS", "full": "WESTAFLEX TUBOS FLEXIVEIS LTDA", "peso": 48.8, "volume": 5, "visitas": 3, "peso_m": [16.0, 10.9, 21.8, 0.0], "vol_m": [2, 1, 2, 0], "vis_m": [1, 1, 1, 0]}, {"nome": "APTIV BRAZIL", "full": "APTIV BRAZIL LTDA", "peso": 46.0, "volume": 4, "visitas": 4, "peso_m": [0.0, 20.0, 0.0, 26.0], "vol_m": [0, 1, 0, 3], "vis_m": [0, 1, 0, 3]}, {"nome": "SANKO-ESPUMAS INDUSTRIA E COMERCIO", "full": "SANKO-ESPUMAS INDUSTRIA E COMERCIO LTDA", "peso": 42.4, "volume": 10, "visitas": 5, "peso_m": [9.2, 12.8, 0.0, 20.4], "vol_m": [2, 3, 0, 5], "vis_m": [1, 2, 0, 2]}, {"nome": "Southco Brasil Componentes Indust.", "full": "Southco Brasil Componentes Indust. Ltda.", "peso": 42.3, "volume": 5, "visitas": 5, "peso_m": [5.3, 8.9, 4.0, 24.0], "vol_m": [1, 1, 1, 2], "vis_m": [1, 1, 1, 2]}, {"nome": "INDUSTRIA METALURGICA LIPOS", "full": "INDUSTRIA METALURGICA LIPOS LTDA", "peso": 40.0, "volume": 4, "visitas": 1, "peso_m": [0.0, 0.0, 40.0, 0.0], "vol_m": [0, 0, 4, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "HABASIT DO BRASIL IND COM CORREIAS", "full": "HABASIT DO BRASIL IND COM CORREIAS LTDA", "peso": 35.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 35.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "KING COMERCIAL LTDA", "full": "KING COMERCIAL LTDA - EPP", "peso": 33.7, "volume": 3, "visitas": 2, "peso_m": [0.0, 11.0, 0.0, 22.7], "vol_m": [0, 1, 0, 2], "vis_m": [0, 1, 0, 1]}, {"nome": "DRAVA METAIS", "full": "DRAVA METAIS LTDA", "peso": 33.0, "volume": 4, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 33.0], "vol_m": [0, 0, 0, 4], "vis_m": [0, 0, 0, 1]}, {"nome": "JODECLAN FERRAMENTARIA, COMERCIO E", "full": "JODECLAN FERRAMENTARIA, COMERCIO E INDUSTRIA LTDA", "peso": 28.4, "volume": 3, "visitas": 1, "peso_m": [28.4, 0.0, 0.0, 0.0], "vol_m": [3, 0, 0, 0], "vis_m": [1, 0, 0, 0]}, {"nome": "Anelbras Componentes Industriais", "full": "Anelbras Componentes Industriais Ltda.", "peso": 28.0, "volume": 3, "visitas": 1, "peso_m": [28.0, 0.0, 0.0, 0.0], "vol_m": [3, 0, 0, 0], "vis_m": [1, 0, 0, 0]}, {"nome": "Stemmann Industria e Comercio", "full": "Stemmann Industria e Comercio Ltda", "peso": 27.7, "volume": 4, "visitas": 2, "peso_m": [0.0, 0.0, 0.0, 27.7], "vol_m": [0, 0, 0, 4], "vis_m": [0, 0, 0, 2]}, {"nome": "RC ACESSORIOS INDUSTRIAIS", "full": "RC ACESSORIOS INDUSTRIAIS LTDA", "peso": 23.0, "volume": 3, "visitas": 1, "peso_m": [0.0, 0.0, 23.0, 0.0], "vol_m": [0, 0, 3, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "MAGRAL EQUIPAMENTOS HIDRAULICOS E", "full": "MAGRAL EQUIPAMENTOS HIDRAULICOS E PNEUMATICOS LTDA", "peso": 21.1, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 21.1, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "SEMAN INDUSTRIA DE EQUIPAMENTOS IN", "full": "SEMAN INDUSTRIA DE EQUIPAMENTOS INDUSTRIAIS LTDA", "peso": 20.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 20.0, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "PLASOLUTION INDUSTRIA E COMERCIO D", "full": "PLASOLUTION INDUSTRIA E COMERCIO DE PLASTICOS LTDA", "peso": 18.0, "volume": 17, "visitas": 8, "peso_m": [10.0, 2.0, 0.0, 6.0], "vol_m": [10, 2, 0, 5], "vis_m": [5, 1, 0, 2]}, {"nome": "SALVI CASAGRANDE MEDICAO E AUTOM", "full": "SALVI CASAGRANDE MEDICAO E AUTOM LTDA", "peso": 18.0, "volume": 2, "visitas": 2, "peso_m": [0.0, 18.0, 0.0, 0.0], "vol_m": [0, 2, 0, 0], "vis_m": [0, 2, 0, 0]}, {"nome": "Atlas Copco Brasil", "full": "Atlas Copco Brasil Ltda", "peso": 15.0, "volume": 1, "visitas": 1, "peso_m": [15.0, 0.0, 0.0, 0.0], "vol_m": [1, 0, 0, 0], "vis_m": [1, 0, 0, 0]}, {"nome": "HELLA DO BRASIL AUTOMOTIVE", "full": "HELLA DO BRASIL AUTOMOTIVE LTDA.", "peso": 13.6, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 13.6, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "CLEDSON GONCALVES DE SOUZA EIRELI", "full": "CLEDSON GONCALVES DE SOUZA EIRELI - ME", "peso": 11.0, "volume": 12, "visitas": 2, "peso_m": [3.0, 0.0, 8.0, 0.0], "vol_m": [1, 0, 11, 0], "vis_m": [1, 0, 1, 0]}, {"nome": "BRINGER DISTRIBUIDORA", "full": "BRINGER DISTRIBUIDORA LTDA", "peso": 10.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 10.0, 0.0, 0.0], "vol_m": [0, 1, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "VETOR5 INSTALACOES DE MAQUINAS E E", "full": "VETOR5 INSTALACOES DE MAQUINAS E EQUIPAMENTOS IND. EIRELI", "peso": 10.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 10.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "ESSENTRA INDUSTRIA E COMERCIO", "full": "ESSENTRA INDUSTRIA E COMERCIO LTDA.", "peso": 9.6, "volume": 5, "visitas": 3, "peso_m": [4.0, 5.6, 0.0, 0.0], "vol_m": [2, 3, 0, 0], "vis_m": [2, 1, 0, 0]}, {"nome": "BRADER", "full": "BRADER LTDA", "peso": 9.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 9.0, 0.0, 0.0], "vol_m": [0, 1, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "MIT-EXACTA IND E COM DE SENSORES E", "full": "MIT-EXACTA IND E COM DE SENSORES E AUTOMACAO LTDA", "peso": 6.5, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 6.5], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "IMPORTADORA DE ROLAMENTOS RADIAL", "full": "IMPORTADORA DE ROLAMENTOS RADIAL LTDA", "peso": 5.5, "volume": 3, "visitas": 3, "peso_m": [5.0, 0.1, 0.0, 0.4], "vol_m": [1, 1, 0, 1], "vis_m": [1, 1, 0, 1]}, {"nome": "CARLSONS PRODUTOS INDUSTRIAIS", "full": "CARLSONS PRODUTOS INDUSTRIAIS LTDA", "peso": 4.3, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 4.3, 0.0], "vol_m": [0, 0, 1, 0], "vis_m": [0, 0, 1, 0]}, {"nome": "FLAMAFER COMERCIO DE FERRAMENTAS", "full": "FLAMAFER COMERCIO DE FERRAMENTAS LTDA", "peso": 2.5, "volume": 2, "visitas": 2, "peso_m": [1.5, 0.0, 1.0, 0.0], "vol_m": [1, 0, 1, 0], "vis_m": [1, 0, 1, 0]}, {"nome": "FREUDENBERG NAO TECIDO", "full": "FREUDENBERG NAO TECIDO LTDA", "peso": 1.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 1.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "METALPART INDUSTRIA E COMERCIO", "full": "METALPART INDUSTRIA E COMERCIO LTDA.", "peso": 1.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 1.0, 0.0, 0.0], "vol_m": [0, 1, 0, 0], "vis_m": [0, 1, 0, 0]}, {"nome": "NOVA GERACAO COMERCIAL ELETRICA", "full": "NOVA GERACAO COMERCIAL ELETRICA LTDA", "peso": 1.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 0.0, 0.0, 1.0], "vol_m": [0, 0, 0, 1], "vis_m": [0, 0, 0, 1]}, {"nome": "VOLKSWAGEN - RESENDE", "full": "VOLKSWAGEN - RESENDE", "peso": 1.0, "volume": 1, "visitas": 1, "peso_m": [0.0, 1.0, 0.0, 0.0], "vol_m": [0, 1, 0, 0], "vis_m": [0, 1, 0, 0]}], "participacao": [{"nome": "METALAC SPS INDUSTRIA E COMERCIO", "pcts": [8.25, 8.86, 10.78, 7.95], "var": -0.3}, {"nome": "ULIANA IND. MET.", "pcts": [5.8, 7.21, 5.9, 5.12], "var": -0.68}, {"nome": "JARDIM SISTEMAS AUTOMOTIVOS E INDU", "pcts": [4.88, 5.65, 6.73, 5.98], "var": 1.1}, {"nome": "INDUSTRIA AUTO METALURGICA", "pcts": [3.93, 6.4, 5.16, 5.33], "var": 1.4}, {"nome": "FICOSA DO BRASIL", "pcts": [4.32, 3.88, 3.24, 3.98], "var": -0.34}, {"nome": "IOCHPE MAXION", "pcts": [3.05, 4.02, 3.52, 3.17], "var": 0.12}, {"nome": "INDUSTRIA E COMERCIO URSO BRANCO", "pcts": [3.18, 4.43, 2.76, 2.76], "var": -0.42}, {"nome": "ITALCABOS", "pcts": [2.64, 2.18, 3.77, 3.16], "var": 0.52}], "insights": {"maior_forn": "METALAC SPS INDUSTRIA E COMERCIO", "maior_forn_pct": 9.04, "maior_forn_peso": 239026.9, "mais_visitas": "IOCHPE MAXION", "mais_visitas_n": 52, "maior_volume": "INDUSTRIA AUTO METALURGICA", "maior_volume_n": 791, "maior_mes": "Junho", "maior_mes_peso": 757491.4, "menor_mes": "Abril", "menor_mes_peso": 484907.0, "maior_cresc": "INDUSTRIA AUTO METALURGICA", "maior_cresc_var": 1.4, "maior_red": "ULIANA IND. MET.", "maior_red_var": -0.68, "media_visitas": 11.9, "cresc_jun_abr": 56.2}};
+const AZUL='#092B54',VERM='#C8102E',AZUL3='#1456a8';
+const PAL=['#092B54','#C8102E','#1456a8','#e63252','#0d3a6f','#4d7bb8','#8a3b4d','#2c6fc0','#a5b4c8','#f0864f','#6b8cba','#c8102e'];
+const fmt=n=>n.toLocaleString('pt-BR');
+const fmt1=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const S=DATA.suppliers, MESES=DATA.meses;
+
+// ---- filter state (per section). null = todos os meses ----
+const state={peso:null, vis:null, vol:null, rank:null};
+
+// helpers to compute metric for a supplier given month filter (idx or null)
+const gp=(s,mi)=>mi===null?s.peso:s.peso_m[mi];
+const gvol=(s,mi)=>mi===null?s.volume:s.vol_m[mi];
+const gvis=(s,mi)=>mi===null?s.visitas:s.vis_m[mi];
+const topBy=(fn,n)=>[...S].map(s=>({s,v:fn(s)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,n);
+const totalPeso=mi=>mi===null?DATA.totais.peso:DATA.mensal.peso[mi];
+const totalVis=mi=>mi===null?DATA.totais.visitas:DATA.mensal.visitas[mi];
+const totalVol=mi=>mi===null?DATA.totais.volume:DATA.mensal.volume[mi];
+
+// countup values (period totals)
+const CU={REGISTROS:DATA.totais.registros,FORNECEDORES:DATA.totais.fornecedores,
+  PESO_MIL:DATA.totais.peso/1000,VOLUME:DATA.totais.volume,VISITAS:DATA.totais.visitas,CLIENTES:DATA.totais.clientes};
+
+Chart.defaults.font.family="'Inter',sans-serif";
+Chart.defaults.font.size=11.5;Chart.defaults.color='#5b6b82';
+Chart.register(ChartDataLabels);
+Chart.defaults.maintainAspectRatio=false;
+Chart.defaults.responsive=true;
+Chart.defaults.plugins.datalabels.display=false;
+
+const charts={};let built={};
+
+// ============ DONUT (slide 3) ============
+function buildDonut(){
+  const t=topBy(s=>s.peso,7);
+  const outros=DATA.totais.peso-t.reduce((a,x)=>a+x.v,0);
+  const labels=t.map(x=>x.s.nome).concat(['Outros fornecedores']);
+  const vals=t.map(x=>x.v).concat([outros]);
+  charts.donut=new Chart(document.getElementById('cDonut'),{type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:PAL.slice(0,7).concat(['#cdd5e0']),borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:12,padding:9,font:{size:10.5}}},
+      tooltip:{callbacks:{label:c=>' '+c.label+': '+fmt1(c.raw/1000)+' t ('+(c.raw/DATA.totais.peso*100).toFixed(1)+'%)'}},
+      datalabels:{display:c=>c.dataIndex<7&&(c.dataset.data[c.dataIndex]/DATA.totais.peso*100)>=3,
+        color:'#fff',font:{weight:'700',size:11},formatter:v=>(v/DATA.totais.peso*100).toFixed(1)+'%'}},
+      animation:{animateRotate:true,duration:1200}}});
+}
+
+// ============ EVO (slide 4) ============
+function buildEvo(){
+  const m=DATA.mensal;
+  charts.evo=new Chart(document.getElementById('cEvo'),{
+    data:{labels:MESES,datasets:[
+      {type:'bar',label:'Peso (t)',data:m.peso.map(x=>x/1000),backgroundColor:AZUL,borderRadius:8,yAxisID:'y',order:3,
+        datalabels:{display:true,anchor:'end',align:'end',offset:2,color:AZUL,font:{weight:'800',size:12},formatter:v=>fmt1(v)+'t'}},
+      {type:'bar',label:'Volumes',data:m.volume,backgroundColor:VERM,borderRadius:8,yAxisID:'y1',order:2,
+        datalabels:{display:true,anchor:'end',align:'end',offset:2,color:VERM,font:{weight:'800',size:12},formatter:v=>fmt(v)}},
+      {type:'line',label:'Visitas',data:m.visitas,borderColor:AZUL3,backgroundColor:AZUL3,borderWidth:3,tension:.4,pointRadius:5,pointBackgroundColor:'#fff',pointBorderWidth:3,yAxisID:'y1',order:1,
+        datalabels:{display:true,anchor:'center',align:'top',offset:8,color:AZUL3,font:{weight:'800',size:11.5},backgroundColor:'rgba(255,255,255,.85)',borderRadius:4,padding:{top:2,bottom:2,left:4,right:4},formatter:v=>fmt(v)}}]},
+    options:{layout:{padding:{top:24}},plugins:{legend:{position:'top',labels:{boxWidth:14,padding:16,font:{size:12}}}},
+      scales:{y:{position:'left',title:{display:true,text:'Peso (t)'},grid:{color:'#eef1f6'},grace:'12%'},
+        y1:{position:'right',title:{display:true,text:'Volumes / Visitas'},grid:{display:false},grace:'12%'}},
+      animation:{duration:1200}}});
+}
+
+// ============ PESO (slide 5) — filtrável ============
+function renderPeso(){
+  const mi=state.peso;
+  const t=topBy(s=>gp(s,mi),12);
+  document.getElementById('pesoTitle').textContent=(mi===null?'Todos os meses':MESES[mi])+' · Top '+t.length;
+  const tp=totalPeso(mi);
+  const labels=t.map(x=>x.s.nome), vals=t.map(x=>x.v);
+  if(charts.peso){charts.peso.data.labels=labels;charts.peso.data.datasets[0].data=vals;
+    charts.peso.data.datasets[0].backgroundColor=vals.map((_,i)=>i===0?VERM:AZUL);charts.peso.update();return;}
+  charts.peso=new Chart(document.getElementById('cPeso'),{type:'bar',
+    data:{labels,datasets:[{label:'Peso (kg)',data:vals,backgroundColor:vals.map((_,i)=>i===0?VERM:AZUL),borderRadius:6}]},
+    options:{indexAxis:'y',layout:{padding:{right:56}},plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>' '+fmt1(c.raw)+' kg ('+(c.raw/tp*100).toFixed(1)+'%)'}},
+      datalabels:{display:true,anchor:'end',align:'end',offset:4,color:'#334',font:{weight:'700',size:11},formatter:v=>fmt1(v/1000)+'t'}},
+      scales:{x:{grid:{color:'#eef1f6'},ticks:{callback:v=>fmt(v/1000)+'t'},grace:'8%'},y:{grid:{display:false},ticks:{font:{size:10.5}}}},
+      animation:{duration:800}}});
+}
+
+// ============ VISITAS (slide 7) — filtrável ============
+function renderVis(){
+  const mi=state.vis;
+  const t=topBy(s=>gvis(s,mi),10);
+  document.getElementById('visTitle').textContent='Top '+t.length+' Fornecedores · '+(mi===null?'Período completo':MESES[mi]);
+  const totV=totalVis(mi);
+  const nForn=S.filter(s=>gvis(s,mi)>0).length;
+  const media=nForn?(totV/nForn):0;
+  // update cards
+  document.getElementById('v_total').textContent=fmt(totV);
+  document.getElementById('v_media').textContent=media.toFixed(1);
+  document.getElementById('v_top').textContent=t.length?t[0].s.nome:'—';
+  document.getElementById('v_top_n').textContent=t.length?(t[0].v+' visitas'):'';
+  const labels=t.map(x=>x.s.nome),vals=t.map(x=>x.v);
+  if(charts.vis){charts.vis.data.labels=labels;charts.vis.data.datasets[0].data=vals;
+    charts.vis.data.datasets[0].backgroundColor=vals.map((_,i)=>i===0?VERM:AZUL);charts.vis.update();return;}
+  charts.vis=new Chart(document.getElementById('cVis'),{type:'bar',
+    data:{labels,datasets:[{label:'Visitas',data:vals,backgroundColor:vals.map((_,i)=>i===0?VERM:AZUL),borderRadius:6}]},
+    options:{indexAxis:'y',layout:{padding:{right:40}},plugins:{legend:{display:false},
+      datalabels:{display:true,anchor:'end',align:'end',offset:4,color:'#334',font:{weight:'800',size:12},formatter:v=>fmt(v)}},
+      scales:{x:{grid:{color:'#eef1f6'},grace:'8%'},y:{grid:{display:false},ticks:{font:{size:10.5}}}},animation:{duration:800}}});
+}
+
+// ============ VOLUMES (slide 8) — filtrável ============
+function renderVol(){
+  const mi=state.vol;
+  // bar: top 10 by volume (filtered)
+  const tb=topBy(s=>gvol(s,mi),10);
+  document.getElementById('volBarTitle').textContent='Ranking de Volumes · '+(mi===null?'Período':MESES[mi]);
+  document.getElementById('volBarSub').textContent=(mi===null?'Soma do período':'Somente '+MESES[mi])+' · Top '+tb.length;
+  const bl=tb.map(x=>x.s.nome),bv=tb.map(x=>x.v);
+  if(charts.volBar){charts.volBar.data.labels=bl;charts.volBar.data.datasets[0].data=bv;
+    charts.volBar.data.datasets[0].backgroundColor=bv.map((_,i)=>i===0?VERM:AZUL);charts.volBar.update();}
+  else{charts.volBar=new Chart(document.getElementById('cVolBar'),{type:'bar',
+    data:{labels:bl,datasets:[{label:'Volumes',data:bv,backgroundColor:bv.map((_,i)=>i===0?VERM:AZUL),borderRadius:6}]},
+    options:{indexAxis:'y',layout:{padding:{right:44}},plugins:{legend:{display:false},
+      datalabels:{display:true,anchor:'end',align:'end',offset:4,color:'#334',font:{weight:'800',size:11.5},formatter:v=>fmt(v)}},
+      scales:{x:{grid:{color:'#eef1f6'},grace:'8%'},y:{grid:{display:false},ticks:{font:{size:10}}}},animation:{duration:800}}});}
+  // stacked: top 6 by total volume, months as segments. If a month filter is active, highlight that month.
+  const top6=topBy(s=>s.volume,6).map(x=>x.s);
+  document.getElementById('volStackTitle').textContent='Top 6 · Volumes por Mês';
+  document.getElementById('volStackSub').textContent=mi===null?'Comparativo dos quatro meses':MESES[mi]+' em destaque';
+  const ds=MESES.map((mes,i)=>({label:mes,data:top6.map(s=>s.vol_m[i]),
+    backgroundColor: mi===null? PAL[i] : (i===mi?PAL[i]:'rgba(180,190,205,.35)'),borderRadius:4}));
+  if(charts.volStack){charts.volStack.data.labels=top6.map(s=>s.nome);charts.volStack.data.datasets=ds;charts.volStack.update();}
+  else{charts.volStack=new Chart(document.getElementById('cVolStack'),{type:'bar',
+    data:{labels:top6.map(s=>s.nome),datasets:ds},
+    options:{indexAxis:'y',plugins:{legend:{position:'top',labels:{boxWidth:12,padding:10}},
+      datalabels:{display:c=>c.dataset.data[c.dataIndex]>=60,color:'#fff',font:{weight:'700',size:10},formatter:v=>fmt(v)}},
+      scales:{x:{stacked:true,grid:{color:'#eef1f6'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}},animation:{duration:800}}});}
+}
+
+// ============ PONTOS DO PERIODO (slide 11) ============
+function buildPeriodoPontos(){
+  const m=DATA.mensal;
+  const pontos=MESES.map((mes,i)=>({
+    x:i+1,
+    y:m.peso[i]/1000,
+    mes,
+    volume:m.volume[i],
+    visitas:m.visitas[i]
+  }));
+  charts.periodoPontos=new Chart(document.getElementById('cPeriodoPontos'),{type:'bubble',
+    data:{datasets:[{
+      label:'Período',
+      data:pontos.map(p=>({x:p.x,y:p.y,r:Math.max(9,Math.min(24,p.visitas/32)),mes:p.mes,volume:p.volume,visitas:p.visitas})),
+      backgroundColor:pontos.map((_,i)=>i===2?VERM:AZUL),
+      borderColor:pontos.map((_,i)=>i===2?VERM:AZUL),
+      borderWidth:2,
+      hoverBorderWidth:3
+    }]},
+    options:{layout:{padding:{top:22,right:34,bottom:8,left:8}},plugins:{legend:{display:false},
+      tooltip:{callbacks:{title:c=>c[0].raw.mes,label:c=>' Peso: '+fmt1(c.raw.y)+' t · Volumes: '+fmt(c.raw.volume)+' · Visitas: '+fmt(c.raw.visitas)}},
+      datalabels:{display:true,anchor:'end',align:'top',offset:8,color:'#334',font:{weight:'800',size:12},formatter:(v)=>v.mes+'\n'+fmt1(v.y)+' t'}} ,
+      scales:{x:{min:.5,max:4.5,grid:{color:'#eef1f6'},ticks:{stepSize:1,callback:v=>MESES[v-1]||''},title:{display:true,text:'Período analisado'}},
+        y:{grid:{color:'#eef1f6'},grace:'14%',ticks:{callback:v=>fmt(v)+' t'},title:{display:true,text:'Peso movimentado (t)'}}},
+      animation:{duration:1000}}});
+}
+
+// ============ RANKING (slide 9) — filtrável ============
+function renderRank(){
+  const mi=state.rank;
+  const tp=totalPeso(mi);
+  const t=topBy(s=>gp(s,mi),10);
+  let h='<thead><tr><th>#</th><th>Fornecedor</th><th class="r">Peso (t)</th><th class="r">%</th><th class="r">Volumes</th><th class="r">Visitas</th></tr></thead><tbody>';
+  t.forEach((x,i)=>{const g=i===0?'g1':i===1?'g2':i===2?'g3':'';
+    const pct=tp>0?(x.v/tp*100):0;
+    h+='<tr><td><span class="rankn '+g+'">'+(i+1)+'</span></td><td>'+x.s.nome+'</td><td class="r">'+fmt1(x.v/1000)+'</td><td class="r"><span class="badge neu">'+pct.toFixed(2)+'%</span></td><td class="r">'+fmt(gvol(x.s,mi))+'</td><td class="r">'+fmt(gvis(x.s,mi))+'</td></tr>';});
+  document.getElementById('rankTbl').innerHTML=h+'</tbody>';
+}
+
+// ============ TABS builder ============
+function buildTabs(containerId,onPick,accent){
+  const el=document.getElementById(containerId);
+  const opts=[{lab:'Todos',v:null}].concat(MESES.map((m,i)=>({lab:m,v:i})));
+  el.innerHTML='';
+  opts.forEach((o,idx)=>{
+    const b=document.createElement('button');
+    b.textContent=o.lab;
+    if(idx===0){b.classList.add('on');if(accent)b.classList.add('accent-tab');}
+    b.onclick=()=>{
+      [...el.children].forEach(c=>{c.classList.remove('on');c.classList.remove('accent-tab');});
+      b.classList.add('on');if(accent&&o.v!==null)b.classList.add('accent-tab');else if(accent&&o.v===null)b.classList.add('accent-tab');
+      onPick(o.v);
+    };
+    el.appendChild(b);
+  });
+}
+
+// ============ STATIC content ============
+function buildStatic(){
+  // slide 3 overview cards
+  const ins=DATA.insights;
+  document.getElementById('ov_maior').textContent=ins.maior_forn;
+  document.getElementById('ov_maior_pct').textContent=ins.maior_forn_pct+'% do peso · '+fmt1(ins.maior_forn_peso/1000)+' t';
+  document.getElementById('ov_mes').textContent=ins.maior_mes;
+  document.getElementById('ov_mes_note').textContent=fmt1(ins.maior_mes_peso/1000)+' t movimentadas';
+  // slide 4 evo cards
+  const m=DATA.mensal;const ev=document.getElementById('evoCards');ev.innerHTML='';
+  MESES.forEach((mes,i)=>{let trend='';
+    if(i>0){const dp=(m.peso[i]-m.peso[i-1])/m.peso[i-1]*100;
+      trend='<div class="ctrend '+(dp>=0?'up':'down')+'"><i class="ms" style="font-size:.95rem">'+(dp>=0?'arrow_upward':'arrow_downward')+'</i>'+Math.abs(dp).toFixed(1)+'% peso</div>';}
+    ev.innerHTML+='<div class="card'+(m.peso[i]===Math.max(...m.peso)?' accent':'')+'"><div class="ci"><i class="ms">calendar_month</i></div><div class="cval" style="font-size:1.7rem">'+fmt1(m.peso[i]/1000)+'<span class="cunit">t</span></div><div class="clab">'+mes+'</div><div class="cnote">'+fmt(m.volume[i])+' vol · '+fmt(m.visitas[i])+' visitas</div>'+trend+'</div>';});
+  // participacao table (slide 6)
+  const pTbl=document.getElementById('partTbl');
+  const P=DATA.participacao;
+  let maxV=Math.max(...P.map(x=>x.var)),minV=Math.min(...P.map(x=>x.var));
+  let ph='<thead><tr><th>Fornecedor</th>'+MESES.map(mm=>'<th class="r">'+mm+'</th>').join('')+'<th class="r">Variação</th></tr></thead><tbody>';
+  P.forEach(x=>{const cls=x.var===maxV?'pos':(x.var===minV?'neg':'neu');const sign=x.var>0?'+':'';
+    const star=x.var===maxV?' <i class="ms" style="font-size:.85rem">arrow_upward</i>':(x.var===minV?' <i class="ms" style="font-size:.85rem">arrow_downward</i>':'');
+    ph+='<tr><td>'+x.nome+'</td>'+x.pcts.map(p=>'<td class="r">'+p.toFixed(2)+'%</td>').join('')+'<td class="r"><span class="badge '+cls+'">'+sign+x.var.toFixed(2)+'pp'+star+'</span></td></tr>';});
+  pTbl.innerHTML=ph+'</tbody>';
+  // insights (slide 10)
+  const ig=document.getElementById('insGrid');ig.innerHTML='';
+  const cards=[
+    ['workspace_premium','Maior Participação','O fornecedor <b>'+ins.maior_forn+'</b> lidera o peso movimentado, respondendo por <span class="hl">'+ins.maior_forn_pct+'%</span> do total do período.'],
+    ['fact_check','Mais Visitas','<b>'+ins.mais_visitas+'</b> foi o fornecedor com maior frequência, somando <span class="hl">'+ins.mais_visitas_n+' visitas</span> — bem acima da média de '+ins.media_visitas+'.'],
+    ['inventory_2','Maior Volume','Em número de volumes, <b>'+ins.maior_volume+'</b> se destaca com <span class="hl">'+fmt(ins.maior_volume_n)+' volumes</span> movimentados.'],
+    ['trending_up','Mês de Pico','<b>'+ins.maior_mes+'</b> concentrou a maior movimentação, com <span class="hl">'+fmt1(ins.maior_mes_peso/1000)+' t</span> — variação de '+ins.cresc_jun_abr+'% sobre Abril.'],
+    ['trending_down','Mês de Menor Movimento','<b>'+ins.menor_mes+'</b> registrou o menor peso do período, com <span class="hl">'+fmt1(ins.menor_mes_peso/1000)+' t</span>.'],
+    ['show_chart','Dinâmica de Share','Maior avanço de participação: <b>'+ins.maior_cresc+'</b> (+'+ins.maior_cresc_var+'pp). Maior retração: <b>'+ins.maior_red+'</b> ('+ins.maior_red_var+'pp).'],
+  ];
+  cards.forEach(c=>ig.innerHTML+='<div class="ins"><div class="ih"><i class="ms">'+c[0]+'</i><span class="it">'+c[1]+'</span></div><div class="ib">'+c[2]+'</div></div>');
+  // build tabs
+  buildTabs('pesoToggle',v=>{state.peso=v;renderPeso();},true);
+  buildTabs('visToggle',v=>{state.vis=v;renderVis();},true);
+  buildTabs('volToggle',v=>{state.vol=v;renderVol();},true);
+  buildTabs('rankToggle',v=>{state.rank=v;renderRank();},true);
+  renderRank();
+}
+
+// ============ lazy chart activation ============
+function activateCharts(idx){
+  if(idx===2&&!built.donut){built.donut=1;buildDonut();}
+  if(idx===3&&!built.evo){built.evo=1;buildEvo();}
+  if(idx===4&&!built.peso){built.peso=1;renderPeso();}
+  if(idx===6&&!built.vis){built.vis=1;renderVis();}
+  if(idx===7&&!built.vol){built.vol=1;renderVol();}
+  if(idx===10&&!built.periodoPontos){built.periodoPontos=1;buildPeriodoPontos();}
+}
+
+// ============ countup ============
+let cuDone={};
+function runCountup(slide){
+  slide.querySelectorAll('[data-cu]').forEach(el=>{
+    const key=el.dataset.cu;const val=CU[key];if(val===undefined)return;
+    const dec=(key==='PESO_MIL')?1:0;
+    new countUp.CountUp(el,val,{duration:2,decimalPlaces:dec,separator:'.',decimal:','}).start();
+  });
+}
+
+// ============ nav + observer ============
+const slides=[...document.querySelectorAll('.slide')];
+const deck=document.getElementById('deck');
+const dotsEl=document.getElementById('dots');
+const navCount=document.getElementById('navcount');
+slides.forEach((s,i)=>{const b=document.createElement('button');
+  const n=String(i+1).padStart(2,'0');
+  b.innerHTML='<span class="dn">'+n+'</span>';
+  b.setAttribute('aria-label','Ir para o slide '+n);
+  b.onclick=()=>slides[i].scrollIntoView();dotsEl.appendChild(b);});
+const dots=[...dotsEl.children];
+
+buildStatic();
+
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{
+  const idx=slides.indexOf(e.target);
+  if(e.isIntersecting&&e.intersectionRatio>.55){
+    slides.forEach(s=>s.classList.remove('active'));e.target.classList.add('active');
+    dots.forEach(d=>d.classList.remove('on'));dots[idx].classList.add('on');
+    document.getElementById('progress').style.width=((idx+1)/slides.length*100)+'%';
+    // theme-aware nav (brighten over dark slides)
+    const dark=e.target.classList.contains('dark');
+    dotsEl.classList.toggle('on-dark',dark);
+    navCount.classList.toggle('on-dark',dark);
+    navCount.innerHTML='<b>'+String(idx+1).padStart(2,'0')+'</b> / '+String(slides.length).padStart(2,'0');
+    activateCharts(idx);
+    if(!cuDone[idx]){cuDone[idx]=1;setTimeout(()=>runCountup(e.target),350);}
+  }});},{threshold:[.55],root:deck});
+slides.forEach(s=>io.observe(s));
+
+let cur=0;
+function go(n){cur=Math.max(0,Math.min(slides.length-1,n));slides[cur].scrollIntoView();}
+window.addEventListener('keydown',e=>{
+  const c=slides.findIndex(s=>s.classList.contains('active'));
+  if(['ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();go(c+1);}
+  if(['ArrowUp','PageUp'].includes(e.key)){e.preventDefault();go(c-1);}
+  if(e.key==='Home'){e.preventDefault();go(0);}
+  if(e.key==='End'){e.preventDefault();go(slides.length-1);}
+});
+
+// resize / orientation handling
+let rzT;
+function onResize(){clearTimeout(rzT);rzT=setTimeout(()=>{
+  Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}});
+  const a=slides.find(s=>s.classList.contains('active'));
+  if(a)a.scrollIntoView({block:'start'});
+},180);}
+window.addEventListener('resize',onResize);
+window.addEventListener('orientationchange',onResize);
+
+// ===== Modo apresentação (tela cheia) =====
+const presentBtn=document.getElementById('presentBtn');
+const exitBtn=document.getElementById('exitBtn');
+function fsElement(){return document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement;}
+function enterFS(){
+  const el=document.documentElement;
+  const req=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen;
+  if(req){try{req.call(el);}catch(e){}}
+}
+function exitFS(){
+  const ex=document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen;
+  if(ex&&fsElement()){try{ex.call(document);}catch(e){}}
+}
+function startPresent(){
+  if(fsElement()){exitFS();}
+  else{enterFS();go(0);}
+}
+if(presentBtn)presentBtn.addEventListener('click',startPresent);
+if(exitBtn)exitBtn.addEventListener('click',exitFS);
+// mantém a UI sincronizada, seja via botão, F11 ou Esc
+function syncFS(){
+  const on=!!fsElement();
+  document.body.classList.toggle('is-fs',on);
+  if(presentBtn){presentBtn.innerHTML=on?'<i class="ms">close_fullscreen</i> Sair da tela cheia':'<i class="ms">slideshow</i> Apresentar';}
+}
+['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(ev=>document.addEventListener(ev,syncFS));
+</script>
+</body>
+</html>
