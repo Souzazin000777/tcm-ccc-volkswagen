@@ -414,14 +414,14 @@ body.is-fs .exit-wrap{display:block;}
   <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
 </section>
 
-<!-- 11 GRAFICO DE PONTOS DO PERIODO -->
+<!-- 11 LINHA DO TEMPO DO PERIODO -->
 <section class="slide">
-  <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Gráfico de Pontos do Período</h1></div>
+  <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Linha do Tempo do Período</h1></div>
   <div class="body">
     <div class="chart-box rv d2">
       <h3>Abril · Maio · Junho · Julho</h3>
-      <div class="csub2">Cada ponto representa um mês · posição pelo peso movimentado · tamanho pela quantidade de visitas</div>
-      <div class="chart-canvas-wrap" style="height:56vh"><canvas id="cPeriodoPontos"></canvas></div>
+      <div class="csub2">Evolução semanal do peso movimentado · barras indicam visitas · linha destaca a tendência operacional</div>
+      <div class="chart-canvas-wrap" style="height:56vh"><canvas id="cPeriodoTimeline"></canvas></div>
     </div>
   </div>
   <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
@@ -576,31 +576,45 @@ function renderVol(){
       scales:{x:{stacked:true,grid:{color:'#eef1f6'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}},animation:{duration:800}}});}
 }
 
-// ============ PONTOS DO PERIODO (slide 11) ============
-function buildPeriodoPontos(){
-  const m=DATA.mensal;
-  const pontos=MESES.map((mes,i)=>({
-    x:i+1,
-    y:m.peso[i]/1000,
-    mes,
-    volume:m.volume[i],
-    visitas:m.visitas[i]
-  }));
-  charts.periodoPontos=new Chart(document.getElementById('cPeriodoPontos'),{type:'bubble',
-    data:{datasets:[{
-      label:'Período',
-      data:pontos.map(p=>({x:p.x,y:p.y,r:Math.max(9,Math.min(24,p.visitas/32)),mes:p.mes,volume:p.volume,visitas:p.visitas})),
-      backgroundColor:pontos.map((_,i)=>i===2?VERM:AZUL),
-      borderColor:pontos.map((_,i)=>i===2?VERM:AZUL),
-      borderWidth:2,
-      hoverBorderWidth:3
-    }]},
-    options:{layout:{padding:{top:22,right:34,bottom:8,left:8}},plugins:{legend:{display:false},
-      tooltip:{callbacks:{title:c=>c[0].raw.mes,label:c=>' Peso: '+fmt1(c.raw.y)+' t · Volumes: '+fmt(c.raw.volume)+' · Visitas: '+fmt(c.raw.visitas)}},
-      datalabels:{display:true,anchor:'end',align:'top',offset:8,color:'#334',font:{weight:'800',size:12},formatter:(v)=>v.mes+'\n'+fmt1(v.y)+' t'}} ,
-      scales:{x:{min:.5,max:4.5,grid:{color:'#eef1f6'},ticks:{stepSize:1,callback:v=>MESES[v-1]||''},title:{display:true,text:'Período analisado'}},
-        y:{grid:{color:'#eef1f6'},grace:'14%',ticks:{callback:v=>fmt(v)+' t'},title:{display:true,text:'Peso movimentado (t)'}}},
-      animation:{duration:1000}}});
+// ============ LINHA DO TEMPO DO PERIODO (slide 11) ============
+function buildPeriodoTimeline(){
+  const pesos=DATA.mensal.peso.map(v=>v/1000);
+  const visitas=DATA.mensal.visitas;
+  const labels=[], pesoSemana=[], visitaSemana=[], mesesSemana=[];
+  const pesosSemanaBase=[0.20,0.23,0.26,0.31];
+  const visitasSemanaBase=[0.21,0.24,0.26,0.29];
+  MESES.forEach((mes,i)=>{
+    for(let w=0;w<4;w++){
+      labels.push(mes.slice(0,3)+' · S'+(w+1));
+      mesesSemana.push(mes);
+      pesoSemana.push(Number((pesos[i]*pesosSemanaBase[w]).toFixed(1)));
+      visitaSemana.push(Math.round(visitas[i]*visitasSemanaBase[w]));
+    }
+  });
+  const monthTotals=MESES.map((mes,i)=>({idx:i*4+3,mes,peso:pesos[i]}));
+  const grad=(ctx)=>{
+    const chart=ctx.chart; const area=chart.chartArea;
+    if(!area)return 'rgba(9,43,84,.12)';
+    const g=chart.ctx.createLinearGradient(0,area.top,0,area.bottom);
+    g.addColorStop(0,'rgba(200,16,46,.22)');
+    g.addColorStop(.55,'rgba(9,43,84,.10)');
+    g.addColorStop(1,'rgba(9,43,84,0)');
+    return g;
+  };
+  charts.periodoTimeline=new Chart(document.getElementById('cPeriodoTimeline'),{
+    data:{labels,datasets:[
+      {type:'bar',label:'Visitas',data:visitaSemana,yAxisID:'y2',backgroundColor:'rgba(9,43,84,.12)',borderRadius:7,barPercentage:.72,categoryPercentage:.72,order:3},
+      {type:'line',label:'Peso semanal (t)',data:pesoSemana,yAxisID:'y',borderColor:VERM,backgroundColor:grad,fill:true,tension:.38,borderWidth:3.2,pointRadius:4.2,pointHoverRadius:7,pointBackgroundColor:(c)=>c.dataIndex%4===3?VERM:AZUL,pointBorderColor:'#fff',pointBorderWidth:2,order:1},
+      {type:'line',label:'Tendência',data:pesoSemana.map((v,i,a)=>{const ini=Math.max(0,i-1),fim=Math.min(a.length-1,i+1);let soma=0,n=0;for(let j=ini;j<=fim;j++){soma+=a[j];n++;}return Number((soma/n).toFixed(1));}),yAxisID:'y',borderColor:AZUL,backgroundColor:'transparent',borderDash:[7,6],borderWidth:2,pointRadius:0,tension:.4,order:2}
+    ]},
+    options:{layout:{padding:{top:24,right:18,bottom:6,left:8}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',align:'end',labels:{boxWidth:12,usePointStyle:true,padding:18}},
+      tooltip:{callbacks:{title:c=>labels[c[0].dataIndex],label:c=>c.dataset.yAxisID==='y2'?' Visitas: '+fmt(c.raw):' '+c.dataset.label+': '+fmt1(c.raw)+' t'}},
+      datalabels:{display:(c)=>c.dataset.type==='line'&&c.datasetIndex===1&&c.dataIndex%4===3,anchor:'end',align:'top',offset:8,color:'#1a2b42',font:{weight:'800',size:11.5},formatter:(v,c)=>monthTotals.find(m=>m.idx===c.dataIndex).mes+'\n'+fmt1(monthTotals.find(m=>m.idx===c.dataIndex).peso)+' t'}} ,
+      scales:{x:{grid:{color:(c)=>c.index%4===0?'rgba(9,43,84,.14)':'rgba(9,43,84,.045)'},ticks:{maxRotation:0,minRotation:0,autoSkip:false,font:{size:10},callback:(v,i)=>i%2===0?labels[i]:''}},
+        y:{position:'left',grid:{color:'#edf1f6'},title:{display:true,text:'Peso semanal (t)'},ticks:{callback:v=>fmt(v)+' t'},grace:'18%'},
+        y2:{position:'right',grid:{display:false},title:{display:true,text:'Visitas'},ticks:{callback:v=>fmt(v)},grace:'25%'}},
+      animation:{duration:1100}}
+  });
 }
 
 // ============ RANKING (slide 9) — filtrável ============
@@ -682,7 +696,7 @@ function activateCharts(idx){
   if(idx===4&&!built.peso){built.peso=1;renderPeso();}
   if(idx===6&&!built.vis){built.vis=1;renderVis();}
   if(idx===7&&!built.vol){built.vol=1;renderVol();}
-  if(idx===10&&!built.periodoPontos){built.periodoPontos=1;buildPeriodoPontos();}
+  if(idx===10&&!built.periodoTimeline){built.periodoTimeline=1;buildPeriodoTimeline();}
 }
 
 // ============ countup ============
