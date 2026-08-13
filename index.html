@@ -432,7 +432,7 @@ body.is-fs .exit-wrap{display:block;}
   <div class="slide-head rv d1">
     <div class="kicker">Período</div>
     <h1 class="title">Ordens do Período</h1>
-    <div class="sub" id="ordersSub">Contagem de ordens distintas (mesmo número de carregamento agrupado como 1 ordem) por dia útil e por mês.</div>
+    <div class="sub" id="ordersSub">Contagem de ordens distintas (mesma referência e data de expedição agrupadas como 1 ordem) por dia e por mês.</div>
   </div>
   <div class="body">
     <div class="chart-box rv d2">
@@ -487,14 +487,16 @@ const fmt=n=>n.toLocaleString('pt-BR');
 const fmt1=n=>n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
 const S=DATA.suppliers, MESES=DATA.meses;
 
-// ---- Ordens (nº de carregamento distinto, base "ordem-de-conferencia") ----
-// Cada linha da planilha é um item de um carregamento; carregamentos com o mesmo
-// nº de ordem contam como 1 só. "Por dia" conta ordens distintas por dia útil;
-// "por mês" conta ordens distintas por mês (um pedido que atravessa 2 meses soma em ambos).
-const ORDERS_MONTHLY=[68,87,90,89];
-const ORDERS_DATES=["2026-04-01","2026-04-02","2026-04-03","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-19","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31"];
-const ORDERS_DAILY=[2,2,0,3,2,3,3,3,4,4,9,8,7,4,3,9,1,1,6,6,7,10,0,8,8,11,7,8,7,6,9,7,7,4,6,5,4,5,3,5,7,6,6,6,6,14,0,1,10,7,8,6,6,8,5,7,7,5,6,5,8,7,4,7,9,8,5,6,6,5,9,7,7,5,6,7,6,6,5,6,8,12,10,6,6,7,4,1];
-const ORDERS_MONTH_START_IDX=[0,22,43,65];
+// ---- Ordens (base "ordem-de-conferencia") ----
+// Uma "ordem" = combinação única de Referência + Data de Expedição (não mais nº de ordem/carregamento).
+// Isso evita contar o mesmo embarque mais de uma vez quando a carga chegou em lotes,
+// em dias diferentes, antes de sair consolidada numa única expedição.
+// "Por dia" conta ordens distintas por dia (inclui 3 expedições de fim de semana: 24/05, 14/06, 20/06);
+// "por mês" conta ordens distintas por mês, pelo mês da Data de Expedição.
+const ORDERS_MONTHLY=[58,90,88,92];
+const ORDERS_DATES=["2026-04-01","2026-04-02","2026-04-03","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-24","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-14","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-19","2026-06-20","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31"];
+const ORDERS_DAILY=[0,0,0,2,2,2,1,2,2,4,3,4,5,5,3,3,4,0,3,5,4,4,0,6,4,7,7,3,5,5,4,5,5,4,4,3,4,4,3,4,2,4,4,3,3,4,2,0,4,4,4,4,5,5,2,4,2,7,6,1,3,4,4,3,6,3,3,5,4,3,4,4,4,4,3,7,3,3,3,4,6,4,3,4,5,4,6,3,4,4,3];
+const ORDERS_MONTH_START_IDX=[0,22,44,68];
 const ORDERS_MONTH_END_IDX=ORDERS_MONTH_START_IDX.map((s,i)=>i+1<ORDERS_MONTH_START_IDX.length?ORDERS_MONTH_START_IDX[i+1]-1:ORDERS_DAILY.length-1);
 
 // ---- filter state (per section). null = todos os meses ----
@@ -686,7 +688,7 @@ function renderOrdersChart(){
         animation:{duration:800}}});
   }else{
     const total=ORDERS_DAILY.reduce((a,b)=>a+b,0);
-    totalEl.textContent=fmt(total)+' ordens distintas somadas por dia útil (um pedido reaberto em outro dia soma novamente)';
+    totalEl.textContent=fmt(total)+' ordens distintas somadas por dia (inclui 3 expedições de fim de semana; uma referência expedida em outro dia soma novamente)';
     const grad=(ctx)=>{const chart=ctx.chart;const area=chart.chartArea;if(!area)return 'rgba(200,16,46,.14)';
       const g=chart.ctx.createLinearGradient(0,area.top,0,area.bottom);
       g.addColorStop(0,'rgba(200,16,46,.22)');g.addColorStop(1,'rgba(200,16,46,0)');return g;};
