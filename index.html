@@ -146,6 +146,19 @@ h1.title{font-size:clamp(1.6rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.0
 .thanks .tline{width:70px;height:3px;background:var(--vermelho);margin:30px auto;}
 .thanks p{color:#c6d4e8;font-size:1.15rem;font-weight:400;line-height:2;}
 .thanks p b{color:#fff;font-weight:700;}
+.period-chart{padding:20px 24px 22px;}
+.period-chart .chart-canvas-wrap{height:55vh;}
+.orders-chart{padding:20px 24px 22px;}
+.orders-chart .chart-canvas-wrap{height:53vh;}
+.orders-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;}
+.orders-header .csub2{max-width:860px;line-height:1.45;}
+.indicator-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.indicator-grid .card{min-height:190px;padding:24px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;}
+.indicator-grid .card .ci{margin-bottom:16px;}
+.indicator-grid .card .cval{font-size:clamp(1.9rem,2.6vw,2.55rem);}
+.indicator-grid .card .clab{margin-top:9px;}
+@media(max-width:820px){.indicator-grid{grid-template-columns:1fr 1fr;}.orders-header{flex-wrap:wrap;}.period-chart .chart-canvas-wrap,.orders-chart .chart-canvas-wrap{height:48vh;}}
+@media(max-width:560px){.indicator-grid{grid-template-columns:1fr 1fr;gap:10px;}.indicator-grid .card{min-height:145px;padding:16px;}.orders-toggle{width:100%;justify-content:center;}.orders-toggle button{flex:1;}.period-chart,.orders-chart{padding:13px;}}
 
 /* nav dots / scroll indicator */
 .dots{position:fixed;right:clamp(16px,2vw,30px);top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:9px;align-items:flex-end;}
@@ -248,7 +261,7 @@ body.is-fs .exit-wrap{display:block;}
 <body>
 <div class="progress" id="progress"></div>
 <div class="dots on-dark" id="dots"></div>
-<div class="navcount on-dark" id="navcount"><b>01</b> / 12</div>
+<div class="navcount on-dark" id="navcount"><b>01</b> / 14</div>
 <div class="deck" id="deck">
 
 <!-- 1 CAPA -->
@@ -414,20 +427,34 @@ body.is-fs .exit-wrap{display:block;}
   <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
 </section>
 
-<!-- 11 GRAFICO DE PONTOS DO PERIODO -->
-<section class="slide">
-  <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Gráfico de Pontos do Período</h1></div>
+<!-- 11 LINHA DO TEMPO DO PERIODO -->
+<section class="slide" id="slide-11">
+  <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Linha do Tempo do Período</h1></div>
   <div class="body">
-    <div class="chart-box rv d2">
+    <div class="chart-box period-chart rv d2">
       <h3>Abril · Maio · Junho · Julho</h3>
-      <div class="csub2">Cada ponto representa um mês · posição pelo peso movimentado · tamanho pela quantidade de visitas</div>
-      <div class="chart-canvas-wrap" style="height:56vh"><canvas id="cPeriodoPontos"></canvas></div>
+      <div class="csub2">Evolução mensal do peso movimentado · barras indicam visitas · linha destaca a tendência operacional</div>
+      <div class="chart-canvas-wrap"><canvas id="cPeriodoTimeline"></canvas></div>
     </div>
   </div>
   <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
 </section>
 
-<!-- 12 AGRADECIMENTO -->
+<!-- 12 ORDENS DO PERIODO -->
+<section class="slide" id="slide-12">
+  <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Ordens do Período</h1><div class="sub">Na base consolidada disponível, cada registro com chegada válida é contado como 1 ordem.</div></div>
+  <div class="body"><div class="chart-box orders-chart rv d2"><div class="orders-header"><div><h3>Abril · Maio · Junho · Julho</h3><div class="csub2" id="ordersSubtitle"></div></div><div class="toggle orders-toggle" id="ordersToggle"><button class="on accent-tab" data-orders-view="month">Por Mês</button><button data-orders-view="day">Por Dia</button></div></div><div class="chart-canvas-wrap" id="ordersCanvasWrap"><canvas id="cOrders"></canvas></div></div></div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 13 INDICADORES DE ORDENS -->
+<section class="slide" id="slide-13">
+  <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Indicadores de Ordens</h1><div class="sub">Leitura consolidada da contagem mensal de ordens operacionais, a partir do gráfico anterior.</div></div>
+  <div class="body"><div class="indicator-grid" id="orderIndicators"></div></div>
+  <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
+</section>
+
+<!-- 14 AGRADECIMENTO -->
 <section class="slide dark thanks">
   <div class="body" style="justify-content:center">
     <div class="logo-tcm rv d1" style="justify-content:center;margin-bottom:30px"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM Logística"></div>
@@ -604,6 +631,111 @@ function buildPeriodoPontos(){
       animation:{duration:1000}}});
 }
 
+// ============ LINHA DO TEMPO DO PERÍODO (slide 11) ============
+function linearTrend(values){
+  const n=values.length;
+  const sx=(n-1)*n/2;
+  const sy=values.reduce((a,v)=>a+v,0);
+  const sxx=values.reduce((a,_,i)=>a+i*i,0);
+  const sxy=values.reduce((a,v,i)=>a+i*v,0);
+  const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx);
+  const intercept=(sy-slope*sx)/n;
+  return values.map((_,i)=>intercept+slope*i);
+}
+
+function buildPeriodoTimeline(){
+  const m=DATA.mensal;
+  const peso=m.peso.map(v=>v/1000);
+  const trend=linearTrend(peso);
+  const ymin=Math.max(0,Math.floor(Math.min(...peso)/100)*100-50);
+  const ymax=Math.ceil(Math.max(...peso)/100)*100+50;
+  charts.periodoTimeline=new Chart(document.getElementById('cPeriodoTimeline'),{
+    data:{labels:MESES,datasets:[
+      {type:'bar',label:'Visitas',data:m.visitas,yAxisID:'y1',order:3,
+        backgroundColor:'rgba(207,214,223,.78)',borderColor:'rgba(207,214,223,1)',borderWidth:1,
+        borderRadius:9,barPercentage:.56,categoryPercentage:.72},
+      {type:'line',label:'Tendência',data:trend,yAxisID:'y',order:2,
+        borderColor:AZUL,backgroundColor:AZUL,borderWidth:2,borderDash:[7,6],tension:.28,
+        pointRadius:0,pointHoverRadius:0},
+      {type:'line',label:'Peso mensal (t)',data:peso,yAxisID:'y',order:1,
+        borderColor:VERM,backgroundColor:'rgba(200,16,46,.08)',borderWidth:3,tension:.35,fill:true,
+        pointRadius:5,pointHoverRadius:7,pointBackgroundColor:VERM,pointBorderColor:'#fff',pointBorderWidth:2,
+        datalabels:{display:true,anchor:'end',align:'top',offset:8,color:AZUL,
+          font:{weight:'800',size:11},formatter:(v,c)=>[MESES[c.dataIndex],fmt1(v)+' t']}}
+    ]},
+    options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:34,right:8,bottom:2,left:4}},
+      plugins:{legend:{position:'top',align:'end',labels:{usePointStyle:true,boxWidth:9,padding:16,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.dataset.yAxisID==='y'?fmt1(c.raw)+' t':fmt(c.raw))}}},
+      scales:{x:{grid:{color:'#f0f2f6'},ticks:{font:{weight:'600'}},border:{color:'#d9dee7'}},
+        y:{position:'left',min:ymin,max:ymax,title:{display:true,text:'Peso mensal (t)'},grid:{color:'#e9edf3'},ticks:{callback:v=>fmt(v)+' t'}},
+        y1:{position:'right',beginAtZero:true,suggestedMax:Math.ceil(Math.max(...m.visitas)/100)*100+100,
+          title:{display:true,text:'Visitas'},grid:{display:false},ticks:{callback:v=>fmt(v)}}},
+      animation:{duration:1100,easing:'easeOutQuart'}}
+  });
+}
+
+// ============ ORDENS DO PERÍODO (slides 12 e 13) ============
+const ORDER_VALUES=DATA.mensal.visitas;
+const ORDER_DAYS=[30,31,30,31];
+const ORDER_TOTAL=ORDER_VALUES.reduce((a,v)=>a+v,0);
+
+function renderOrders(view='month'){
+  const monthly=view==='month';
+  const values=monthly?ORDER_VALUES:ORDER_VALUES.map((v,i)=>v/ORDER_DAYS[i]);
+  const subtitle=document.getElementById('ordersSubtitle');
+  subtitle.textContent=monthly
+    ?fmt(ORDER_TOTAL)+' ordens no período · contagem baseada nos registros de chegada válidos'
+    :'Média diária mensal · total do mês ÷ dias corridos (a base não possui granularidade diária)';
+  if(charts.orders)charts.orders.destroy();
+  charts.orders=new Chart(document.getElementById('cOrders'),{
+    type:monthly?'bar':'line',
+    data:{labels:MESES,datasets:[monthly?{
+      label:'Ordens',data:values,
+      backgroundColor:values.map((_,i)=>i===values.length-1?VERM:AZUL),
+      borderColor:values.map((_,i)=>i===values.length-1?VERM:AZUL),
+      borderWidth:1,borderRadius:8,barPercentage:.38,categoryPercentage:.8,
+      datalabels:{display:true,anchor:'end',align:'end',offset:3,color:AZUL,font:{weight:'800',size:12},formatter:v=>fmt(v)}
+    }:{
+      label:'Média de ordens por dia',data:values,borderColor:VERM,backgroundColor:'rgba(200,16,46,.09)',
+      borderWidth:3,tension:.35,fill:true,pointRadius:5,pointHoverRadius:7,
+      pointBackgroundColor:VERM,pointBorderColor:'#fff',pointBorderWidth:2,
+      datalabels:{display:true,anchor:'end',align:'top',offset:7,color:AZUL,font:{weight:'800',size:12},formatter:v=>fmt1(v)}
+    }]},
+    options:{layout:{padding:{top:24,right:8,left:4,bottom:0}},plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>' '+(monthly?fmt(c.raw)+' ordens':fmt1(c.raw)+' ordens/dia')}}},
+      scales:{x:{grid:{display:false},ticks:{font:{weight:'600'}},border:{color:'#d9dee7'}},
+        y:{beginAtZero:true,grace:'12%',title:{display:true,text:monthly?'Ordens':'Média diária de ordens'},
+          grid:{color:'#e9edf3'},ticks:{precision:monthly?0:1,callback:v=>monthly?fmt(v):fmt1(v)}}},
+      animation:{duration:850,easing:'easeOutQuart'}}
+  });
+}
+
+function buildOrderIndicators(){
+  const avg=ORDER_TOTAL/ORDER_VALUES.length;
+  const max=Math.max(...ORDER_VALUES),maxIdx=ORDER_VALUES.indexOf(max);
+  const min=Math.min(...ORDER_VALUES),minIdx=ORDER_VALUES.indexOf(min);
+  const lastIdx=ORDER_VALUES.length-1,prev=ORDER_VALUES[lastIdx-1];
+  const growth=(ORDER_VALUES[lastIdx]-ORDER_VALUES[0])/ORDER_VALUES[0]*100;
+  const peakVsAvg=(max/avg-1)*100;
+  const minVsAvg=(min/avg-1)*100;
+  const recent=(ORDER_VALUES[lastIdx]/prev-1)*100;
+  const cards=[
+    {icon:'receipt_long',accent:true,value:fmt(ORDER_TOTAL),label:'Total no período',note:MESES[0]+' a '+MESES[lastIdx]+' · '+ORDER_VALUES.length+' meses'},
+    {icon:'bar_chart',value:fmt1(avg),unit:'/mês',label:'Média mensal',note:fmt(ORDER_TOTAL)+' ordens ÷ '+ORDER_VALUES.length+' meses'},
+    {icon:'trending_up',value:fmt(max),label:'Pico do período · '+MESES[maxIdx],note:'Maior volume mensal do período',trend:'↑  +'+fmt1(peakVsAvg)+'% vs. média',trendClass:'up'},
+    {icon:'trending_down',value:fmt(min),label:'Menor volume · '+MESES[minIdx],note:'Menor volume mensal do período',trend:'↓  '+fmt1(minVsAvg)+'% vs. média',trendClass:'down'},
+    {icon:'show_chart',value:'+'+fmt1(growth)+'%',label:'Crescimento no período',note:MESES[0]+' → '+MESES[lastIdx]+' (+'+fmt(ORDER_VALUES[lastIdx]-ORDER_VALUES[0])+' ordens)'},
+    {icon:'update',value:fmt(ORDER_VALUES[lastIdx]),label:MESES[lastIdx]+' · mês mais recente',note:'+'+fmt(ORDER_VALUES[lastIdx]-prev)+' ordens vs. '+MESES[lastIdx-1],trend:'↑  +'+fmt1(recent)+'% vs. '+MESES[lastIdx-1],trendClass:'up'}
+  ];
+  document.getElementById('orderIndicators').innerHTML=cards.map((c,i)=>
+    '<div class="card '+(c.accent?'accent ':'')+'rv d'+Math.min(i+2,8)+'">'+
+      '<div class="ci"><i class="ms">'+c.icon+'</i></div>'+
+      '<div class="cval">'+c.value+(c.unit?'<span class="cunit">'+c.unit+'</span>':'')+'</div>'+
+      '<div class="clab">'+c.label+'</div><div class="cnote">'+c.note+'</div>'+
+      (c.trend?'<div class="ctrend '+c.trendClass+'">'+c.trend+'</div>':'')+
+    '</div>').join('');
+}
+
 // ============ RANKING (slide 9) — filtrável ============
 function renderRank(){
   const mi=state.rank;
@@ -674,6 +806,12 @@ function buildStatic(){
   buildTabs('volToggle',v=>{state.vol=v;renderVol();},true);
   buildTabs('rankToggle',v=>{state.rank=v;renderRank();},true);
   renderRank();
+  buildOrderIndicators();
+  document.querySelectorAll('[data-orders-view]').forEach(button=>button.addEventListener('click',()=>{
+    document.querySelectorAll('[data-orders-view]').forEach(item=>item.classList.remove('on','accent-tab'));
+    button.classList.add('on','accent-tab');
+    renderOrders(button.dataset.ordersView);
+  }));
 }
 
 // ============ lazy chart activation ============
@@ -683,7 +821,8 @@ function activateCharts(idx){
   if(idx===4&&!built.peso){built.peso=1;renderPeso();}
   if(idx===6&&!built.vis){built.vis=1;renderVis();}
   if(idx===7&&!built.vol){built.vol=1;renderVol();}
-  if(idx===10&&!built.periodoPontos){built.periodoPontos=1;buildPeriodoPontos();}
+  if(idx===10&&!built.periodoTimeline){built.periodoTimeline=1;buildPeriodoTimeline();}
+  if(idx===11&&!built.orders){built.orders=1;renderOrders('month');}
 }
 
 // ============ countup ============
@@ -772,6 +911,11 @@ function syncFS(){
   if(presentBtn){presentBtn.innerHTML=on?'<i class="ms">close_fullscreen</i> Sair da tela cheia':'<i class="ms">slideshow</i> Apresentar';}
 }
 ['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(ev=>document.addEventListener(ev,syncFS));
+// Permite abrir um slide específico por URL (ex.: #slide-12).
+if(location.hash){
+  const target=document.querySelector(location.hash);
+  if(target)setTimeout(()=>target.scrollIntoView({block:'start'}),120);
+}
 </script>
 </body>
 </html>
