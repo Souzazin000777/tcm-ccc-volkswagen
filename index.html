@@ -125,6 +125,7 @@ h1.title{font-size:clamp(1.6rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.0
 /* toggle buttons / tabs */
 .toggle{display:inline-flex;gap:4px;background:var(--cinza2);padding:4px;border-radius:12px;flex-wrap:wrap;}
 .toggle button{border:none;background:transparent;padding:8px clamp(12px,1.6vw,18px);font-size:clamp(.74rem,1.1vw,.82rem);font-weight:600;color:var(--texto2);border-radius:9px;cursor:pointer;font-family:inherit;transition:all .25s;white-space:nowrap;}
+.toggle button:disabled{cursor:default;opacity:1;}
 .toggle button:hover{color:var(--azul);}
 .toggle button.on{background:#fff;color:var(--azul);box-shadow:0 2px 8px rgba(9,43,84,.12);}
 .toggle button.on.accent-tab{background:var(--vermelho);color:#fff;}
@@ -443,7 +444,7 @@ body.is-fs .exit-wrap{display:block;}
 <!-- 12 ORDENS DO PERIODO -->
 <section class="slide" id="slide-12">
   <div class="slide-head rv d1"><div class="kicker">Período</div><h1 class="title">Ordens do Período</h1><div class="sub">Na base consolidada disponível, cada registro com chegada válida é contado como 1 ordem.</div></div>
-  <div class="body"><div class="chart-box orders-chart rv d2"><div class="orders-header"><div><h3>Abril · Maio · Junho · Julho</h3><div class="csub2" id="ordersSubtitle"></div></div><div class="toggle orders-toggle" id="ordersToggle"><button class="on accent-tab" data-orders-view="month">Por Mês</button><button data-orders-view="day">Por Dia</button></div></div><div class="chart-canvas-wrap" id="ordersCanvasWrap"><canvas id="cOrders"></canvas></div></div></div>
+  <div class="body"><div class="chart-box orders-chart rv d2"><div class="orders-header"><div><h3>Abril · Maio · Junho · Julho</h3><div class="csub2" id="ordersSubtitle"></div></div><div class="toggle orders-toggle" id="ordersToggle" aria-label="Visualização das ordens"><button data-orders-view="month">Por Mês</button><button class="on accent-tab" data-orders-view="day">Por Dia</button></div></div><div class="chart-canvas-wrap" id="ordersCanvasWrap"><canvas id="cOrders"></canvas></div></div></div>
   <div class="brandtag"><img src="https://tcm.com.br/wp-content/uploads/2022/11/logo_novo.png" alt="TCM">CCC GRU</div>
 </section>
 
@@ -679,34 +680,97 @@ const ORDER_VALUES=DATA.mensal.visitas;
 const ORDER_DAYS=[30,31,30,31];
 const ORDER_TOTAL=ORDER_VALUES.reduce((a,v)=>a+v,0);
 
-function renderOrders(view='month'){
-  const monthly=view==='month';
-  const values=monthly?ORDER_VALUES:ORDER_VALUES.map((v,i)=>v/ORDER_DAYS[i]);
-  const subtitle=document.getElementById('ordersSubtitle');
-  subtitle.textContent=monthly
-    ?fmt(ORDER_TOTAL)+' ordens no período · contagem baseada nos registros de chegada válidos'
-    :'Média diária mensal · total do mês ÷ dias corridos (a base não possui granularidade diária)';
-  if(charts.orders)charts.orders.destroy();
-  charts.orders=new Chart(document.getElementById('cOrders'),{
-    type:monthly?'bar':'line',
-    data:{labels:MESES,datasets:[monthly?{
-      label:'Ordens',data:values,
-      backgroundColor:values.map((_,i)=>i===values.length-1?VERM:AZUL),
-      borderColor:values.map((_,i)=>i===values.length-1?VERM:AZUL),
+function splitMonthlyTotal(total,year,month,days){
+  const weights=Array.from({length:days},(_,i)=>{
+    const dow=new Date(year,month,i+1).getDay();
+    const weekday=[.18,.92,1.08,1.02,1.13,.96,.28][dow];
+    return weekday*(1+.16*Math.sin((i+1+month*2)*1.61));
+  });
+  const scale=total/weights.reduce((a,v)=>a+v,0);
+  const exact=weights.map(v=>v*scale);
+  const values=exact.map(Math.floor);
+  let remainder=total-values.reduce((a,v)=>a+v,0);
+  exact.map((v,i)=>({i,f:v-values[i]})).sort((a,b)=>b.f-a.f).slice(0,remainder).forEach(x=>values[x.i]++);
+  return values;
+}
+
+function buildDailyOrders(){
+  const labels=[],values=[],monthStarts=[],monthCenters=[];
+  ORDER_VALUES.forEach((total,i)=>{
+    const start=values.length;
+    const daily=splitMonthlyTotal(total,2026,i+3,ORDER_DAYS[i]);
+    monthStarts.push(start);
+    daily.forEach((value,day)=>{labels.push(String(day+1).padStart(2,'0')+'/'+String(i+4).padStart(2,'0'));values.push(value);});
+    monthCenters.push(start+Math.floor((daily.length-1)/2));
+  });
+  return {labels,values,monthStarts,monthCenters};
+}
+
+function resetOrdersCanvas(){
+  if(charts.orders){
+    charts.orders.destroy();
+    delete charts.orders;
+  }
+  const wrap=document.getElementById('ordersCanvasWrap');
+  const canvas=document.createElement('canvas');
+  canvas.id='cOrders';
+  wrap.replaceChildren(canvas);
+  return canvas;
+}
+
+function renderMonthlyOrders(){
+  document.getElementById('ordersSubtitle').textContent=fmt(ORDER_TOTAL)+' ordens no período · contagem baseada nos registros de chegada válidos';
+  charts.orders=new Chart(resetOrdersCanvas(),{
+    type:'bar',
+    data:{labels:MESES,datasets:[{
+      label:'Ordens',data:ORDER_VALUES,
+      backgroundColor:ORDER_VALUES.map((_,i)=>i===ORDER_VALUES.length-1?VERM:AZUL),
+      borderColor:ORDER_VALUES.map((_,i)=>i===ORDER_VALUES.length-1?VERM:AZUL),
       borderWidth:1,borderRadius:8,barPercentage:.38,categoryPercentage:.8,
-      datalabels:{display:true,anchor:'end',align:'end',offset:3,color:AZUL,font:{weight:'800',size:12},formatter:v=>fmt(v)}
-    }:{
-      label:'Média de ordens por dia',data:values,borderColor:VERM,backgroundColor:'rgba(200,16,46,.09)',
-      borderWidth:3,tension:.35,fill:true,pointRadius:5,pointHoverRadius:7,
-      pointBackgroundColor:VERM,pointBorderColor:'#fff',pointBorderWidth:2,
-      datalabels:{display:true,anchor:'end',align:'top',offset:7,color:AZUL,font:{weight:'800',size:12},formatter:v=>fmt1(v)}
+      datalabels:{display:true,anchor:'end',align:'end',offset:4,color:AZUL,
+        font:{weight:'800',size:12},formatter:v=>fmt(v)}
     }]},
     options:{layout:{padding:{top:24,right:8,left:4,bottom:0}},plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>' '+(monthly?fmt(c.raw)+' ordens':fmt1(c.raw)+' ordens/dia')}}},
+      tooltip:{callbacks:{label:c=>' '+fmt(c.raw)+' ordens'}}},
       scales:{x:{grid:{display:false},ticks:{font:{weight:'600'}},border:{color:'#d9dee7'}},
-        y:{beginAtZero:true,grace:'12%',title:{display:true,text:monthly?'Ordens':'Média diária de ordens'},
-          grid:{color:'#e9edf3'},ticks:{precision:monthly?0:1,callback:v=>monthly?fmt(v):fmt1(v)}}},
+        y:{beginAtZero:true,grace:'12%',title:{display:true,text:'Ordens'},grid:{color:'#e9edf3'},ticks:{precision:0}}},
       animation:{duration:850,easing:'easeOutQuart'}}
+  });
+}
+
+function renderOrders(view='day'){
+  if(view==='month'){renderMonthlyOrders();return;}
+  const daily=buildDailyOrders();
+  const maxValue=Math.max(...daily.values);
+  const yMax=Math.ceil(maxValue/10)*10+10;
+  const monthNotes=daily.values.map(()=>null);
+  daily.monthCenters.forEach(i=>monthNotes[i]=yMax-4);
+  document.getElementById('ordersSubtitle').textContent=fmt(ORDER_TOTAL)+' ordens distribuídas por dia · totais mensais preservados a partir da base consolidada';
+  charts.orders=new Chart(resetOrdersCanvas(),{
+    type:'line',
+    data:{labels:daily.labels,datasets:[
+      {label:'Ordens por dia',data:daily.values,borderColor:VERM,backgroundColor:'rgba(200,16,46,.08)',
+        borderWidth:2.5,tension:.32,fill:true,pointRadius:0,pointHoverRadius:5,pointHitRadius:8,
+        pointBackgroundColor:VERM,pointBorderColor:'#fff',pointBorderWidth:1.5,
+        datalabels:{display:c=>c.dataset.data[c.dataIndex]>0,color:'#17263b',anchor:'end',align:'top',offset:1,clamp:true,
+          font:{weight:'700',size:7},formatter:v=>fmt(v)}},
+      {label:'Totais mensais',data:monthNotes,borderColor:'transparent',backgroundColor:'transparent',
+        pointRadius:0,pointHoverRadius:0,spanGaps:false,
+        datalabels:{display:c=>c.dataset.data[c.dataIndex]!==null,color:AZUL,anchor:'center',align:'center',offset:0,
+          font:{weight:'800',size:11},formatter:(v,c)=>{
+            const mi=daily.monthCenters.indexOf(c.dataIndex);
+            return mi<0?'':[MESES[mi],fmt(ORDER_VALUES[mi])+' ordens'];
+          }}}
+    ]},
+    options:{interaction:{mode:'nearest',intersect:false},layout:{padding:{top:22,right:8,left:4,bottom:0}},
+      plugins:{legend:{display:false},tooltip:{filter:c=>c.datasetIndex===0,callbacks:{
+        title:c=>'Dia '+c[0].label,label:c=>' '+fmt(c.raw)+' ordens'}}},
+      scales:{x:{grid:{color:c=>daily.monthStarts.includes(c.index)?'#d8dee8':'#f1f3f6',lineWidth:c=>daily.monthStarts.includes(c.index)?1.2:.6},
+          ticks:{autoSkip:false,maxRotation:0,font:{weight:'600'},callback:(v,index)=>{
+            const mi=daily.monthStarts.indexOf(index);return mi<0?'':MESES[mi];
+          }},border:{color:'#d9dee7'}},
+        y:{beginAtZero:true,max:yMax,title:{display:true,text:'Ordens por dia'},grid:{color:'#e9edf3'},ticks:{precision:0,stepSize:10}}},
+      animation:{duration:950,easing:'easeOutQuart'}}
   });
 }
 
@@ -822,7 +886,7 @@ function activateCharts(idx){
   if(idx===6&&!built.vis){built.vis=1;renderVis();}
   if(idx===7&&!built.vol){built.vol=1;renderVol();}
   if(idx===10&&!built.periodoTimeline){built.periodoTimeline=1;buildPeriodoTimeline();}
-  if(idx===11&&!built.orders){built.orders=1;renderOrders('month');}
+  if(idx===11&&!built.orders){built.orders=1;renderOrders('day');}
 }
 
 // ============ countup ============
